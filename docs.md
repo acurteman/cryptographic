@@ -1,0 +1,5 @@
+# IdleChat Documentation
+
+## Variables
+
+## Methods
