@@ -6,11 +6,13 @@ var filePopup
 var editPopup
 var saveTimer
 var prefs = {"userName": "defaultUser", "userColor": "red", "sysColor": "gray", "sysName": "system",
-	"dispTimeStamps": true}
+	"dispTimeStamps": true, "localLogLocation": "user://"}
 var userInfo = {"userName": "", "userPass": ""}
+var localLog = []
 var userList : Dictionary
 var networkInfo = {"networkName": "defaultNet", "messageLog": [], "autosaveInterval": 10, 
 	"netSavePath": "", "netPort": 4242, "netPass": "password", "userList": userList}
+var sharedNetworkInfo = {"networkName":"", "messageLog": []}
 var userPass = ""
 var commandList = {"/credits": "Display users current credits", "/help": "Show list of commands"}
 onready var port = int($joinPopup/portInput.text)
@@ -38,6 +40,7 @@ func _ready():
 	editPopup.connect("id_pressed", self, "_on_edit_item_pressed")
 	
 	$hostPopup/saveDir.text = $hostPopup/saveDirPopup.current_path
+	$userSettingsPopup/logLocInput.text = prefs["localLogLocation"]
 
 func _on_file_item_pressed(ID):
 	if ID == 0: # Join Network
@@ -94,7 +97,7 @@ func _on_userApplyButton_pressed():
 	prefs["userName"] = $userSettingsPopup/usernameInput.text
 	prefs["userColor"] = $userSettingsPopup/userColor.text
 	prefs["dispTimeStamps"] = $userSettingsPopup/timeBtn.pressed
-	prefs["timeZone"] = $userSettingsPopup/timeZoneBtn.get_selected_id()
+	prefs["localLogLocation"] = $userSettingsPopup/logLocInput.text
 	save_prefs()
 
 func _on_yesBtn_pressed():
@@ -118,6 +121,12 @@ func _on_saveDirPopup_dir_selected(dir):
 func _on_saveBrowseBtn_pressed():
 	$hostPopup/saveDirPopup.popup()
 
+func _on_logLocBrowseBtn_pressed():
+	$userSettingsPopup/logLocPopup.popup()
+
+func _on_logLocPopup_dir_selected(dir):
+	$userSettingsPopup/logLocInput.text = dir
+
 func process_command(newCommand):
 	var command = newCommand.split(" ")
 	if not commandList.has(command[0]):
@@ -138,11 +147,8 @@ func create_network():
 	server.create_server(networkInfo["netPort"],MAX_PLAYERS)
 	get_tree().set_network_peer(server)
 	autosaveNetwork(networkInfo["autosaveInterval"])
-	for line in networkInfo["messageLog"]:
-		if prefs["dispTimeStamps"] == false:
-			$messageBox.append_bbcode(line[1])
-		else:
-			$messageBox.append_bbcode(get_formatted_time(line[0]) + line[1])
+	load_localLog()
+	sync_messages()
 	shared_message(OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server hosted on port " + str(port))
 	add_connectedList(get_tree().get_network_unique_id(), prefs["userName"])
 
@@ -187,6 +193,40 @@ func shared_message(dateTime, color, name, newText):
 		$messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
 	if get_tree().get_network_unique_id() == 1:
 		networkInfo["messageLog"].append([dateTime, newMessage])
+
+func local_message(dateTime, color, name, newText):
+	var newMessage = "[b][color=" + color + "]" + name + ": "+"[/color][/b]" + newText + "\n"
+	if prefs["dispTimeStamps"] == false:
+		$messageBox.append_bbcode(newMessage)
+	else:
+		$messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+	localLog.append([get_formatted_time(dateTime), newMessage])
+	save_localLog()
+
+func sync_messages(): # Printing shared and local message in order of time stamp
+	var totalMessages = len(sharedNetworkInfo["messageLog"]) + len(localLog)
+	var localIndex = 0
+	var sharedIndex = 0
+	print("totalMessages: " + str(totalMessages))
+	if len(localLog) == 0: # Check if local log is empty
+		for line in sharedNetworkInfo["messageLog"]:
+			$messageBox.append_bbcode(line)
+	else:
+		for i in range(totalMessages):
+			if OS.get_unix_time_from_datetime(sharedNetworkInfo["messageLog"][sharedIndex][0])  >= OS.get_unix_time_from_datetime(localLog[localIndex][0]):
+				if prefs["dispTimeStamps"] == false:
+					$messageBox.append_bbcode(sharedNetworkInfo["messageLog"][sharedIndex][1])
+				else:
+					$messageBox.append_bbcode(get_formatted_time(sharedNetworkInfo["messageLog"][sharedIndex][0]) + 
+					sharedNetworkInfo["messageLog"][sharedIndex][1])
+				sharedIndex += 1
+			else:
+				if prefs["dispTimeStamps"] == false:
+					$messageBox.append_bbcode(localLog[localIndex][1])
+				else:
+					$messageBox.append_bbcode(get_formatted_time(localLog[localIndex][0]) + 
+					sharedNetworkInfo["messageLog"][sharedIndex][1])
+				localIndex += 1
 
 remotesync func send_chat(curTime, color, name, newText):
 	shared_message(curTime, color, name, newText)
@@ -258,8 +298,27 @@ func checkNetwork(networkName): # Check if save already exists before overwritin
 		save_network()
 		create_network()
 
+func load_localLog():
+	var logPath = prefs["localLogLoc"] + sharedNetworkInfo["networkName"] + ".dat"
+	print("loading local log at: " + str(prefs["localLogLoc"]))
+	var file = File.new()
+	if file.file_exists(logPath):
+		file.open(prefs["localLogLoc"], File.READ)
+		localLog = file.get_var()
+		file.close()
+	else:
+		file.close()
+		save_localLog()
+
+func save_localLog():
+	var logPath = prefs["localLogLoc"] + sharedNetworkInfo["networkName"] + ".dat"
+	var file = File.new()
+	file.open(logPath, File.WRITE)
+	file.store_var(localLog)
+	file.close()
+
 func save_network():
-	print("saving file at: " + networkInfo["netSavePath"])
+	print("saving network file at: " + networkInfo["netSavePath"])
 	var file = File.new()
 	file.open(networkInfo["netSavePath"], File.WRITE)
 	file.store_var(networkInfo)
@@ -288,6 +347,8 @@ remote func net_login(userName, password):
 	var senderID = get_tree().get_rpc_sender_id()
 	var currentList = connectedList.values()
 	print(userName + " connected with pass: " + str(password))
+	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
+	sharedNetworkInfo["messageLog"] = networkInfo["messageLog"]
 	
 	if get_tree().get_network_unique_id() == 1: # Checking that only run by server
 		if currentList.has(userName): # Checking if username is already connected
@@ -295,20 +356,23 @@ remote func net_login(userName, password):
 		
 		elif networkInfo["userList"].has(userName): # Checking if the user has logged in before
 			if networkInfo["userList"][userName]["userPass"] == password: # Returning user, checking userPass
-				rpc_id(get_tree().get_rpc_sender_id(), "login_success")
+				rpc_id(get_tree().get_rpc_sender_id(), "login_success", sharedNetworkInfo)
 			else:
 				rpc_id(get_tree().get_rpc_sender_id(), "login_fail")
 			
 		elif password == networkInfo["netPass"]: # First time login, checking network pass
 			networkInfo["userList"][userName] = create_user_info(userName, password)
-			rpc_id(get_tree().get_rpc_sender_id(), "login_success")
+			rpc_id(get_tree().get_rpc_sender_id(), "login_success", sharedNetworkInfo)
 		
 		else:
 			rpc_id(get_tree().get_rpc_sender_id(), "login_fail")
 
-remote func login_success():
+remote func login_success(netInfo):
+	sharedNetworkInfo = netInfo
 	shared_message(OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Login succesful")
 	rpc_id(1,"add_connectedList", get_tree().get_network_unique_id(), prefs["userName"])
+	load_localLog()
+	sync_messages()
 
 remote func login_fail():
 	shared_message(OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid login, disconnected")

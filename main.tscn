@@ -343,14 +343,14 @@ visible = true
 margin_left = 290.0
 margin_top = 130.0
 margin_right = 590.0
-margin_bottom = 420.0
+margin_bottom = 460.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="ColorRect" type="ColorRect" parent="userSettingsPopup"]
 margin_right = 300.0
-margin_bottom = 290.0
+margin_bottom = 330.0
 color = Color( 0.176471, 0.176471, 0.176471, 1 )
 
 [node name="usernameLabel" type="Label" parent="userSettingsPopup"]
@@ -393,10 +393,10 @@ __meta__ = {
 }
 
 [node name="userApplyButton" type="Button" parent="userSettingsPopup"]
-margin_left = 130.0
-margin_top = 260.0
-margin_right = 182.0
-margin_bottom = 285.0
+margin_left = 120.0
+margin_top = 290.0
+margin_right = 180.0
+margin_bottom = 315.0
 theme = ExtResource( 3 )
 text = "Apply"
 __meta__ = {
@@ -413,7 +413,7 @@ text = "red"
 align = 2
 max_length = 20
 
-[node name="Label" type="Label" parent="userSettingsPopup"]
+[node name="timeLabel" type="Label" parent="userSettingsPopup"]
 margin_left = 10.0
 margin_top = 130.0
 margin_right = 160.0
@@ -427,6 +427,41 @@ margin_top = 150.0
 margin_right = 286.0
 margin_bottom = 190.0
 pressed = true
+
+[node name="logLocLabel" type="Label" parent="userSettingsPopup"]
+margin_left = 10.0
+margin_top = 190.0
+margin_right = 200.0
+margin_bottom = 210.0
+theme = ExtResource( 3 )
+text = "Network log save location:"
+
+[node name="logLocInput" type="LineEdit" parent="userSettingsPopup"]
+margin_left = 10.0
+margin_top = 210.0
+margin_right = 290.0
+margin_bottom = 240.0
+theme = ExtResource( 3 )
+
+[node name="logLocBrowseBtn" type="Button" parent="userSettingsPopup"]
+margin_left = 220.0
+margin_top = 250.0
+margin_right = 290.0
+margin_bottom = 275.0
+theme = ExtResource( 3 )
+text = "Browse"
+
+[node name="logLocPopup" type="FileDialog" parent="userSettingsPopup"]
+margin_left = -90.0
+margin_top = -10.0
+margin_right = 410.0
+margin_bottom = 340.0
+window_title = "Network Save Directory"
+mode_overrides_title = false
+mode = 2
+access = 2
+current_dir = "/home/alex/Godot/IdleChat"
+current_path = "/home/alex/Godot/IdleChat/"
 
 [node name="loadPopup" type="FileDialog" parent="."]
 margin_left = 205.262
@@ -454,4 +489,6 @@ __meta__ = {
 [connection signal="pressed" from="overwriteSave/yesBtn" to="." method="_on_yesBtn_pressed"]
 [connection signal="pressed" from="overwriteSave/noBtn" to="." method="_on_noBtn_pressed"]
 [connection signal="pressed" from="userSettingsPopup/userApplyButton" to="." method="_on_userApplyButton_pressed"]
+[connection signal="pressed" from="userSettingsPopup/logLocBrowseBtn" to="." method="_on_logLocBrowseBtn_pressed"]
+[connection signal="dir_selected" from="userSettingsPopup/logLocPopup" to="." method="_on_logLocPopup_dir_selected"]
 [connection signal="confirmed" from="loadPopup" to="." method="_on_loadPopup_confirmed"]
