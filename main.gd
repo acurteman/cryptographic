@@ -6,17 +6,20 @@ var MAX_PLAYERS = 32
 var filePopup
 var editPopup
 var saveTimer
+var cycleTimer
 var prefs = {"userName": "defaultUser","userAlias": "defaultAlias", "userColor": "red", "sysColor": "gray", "sysName": "system",
 	"dispTimeStamps": true, "localLogLocation": "user://"}
-var userInfo = {"userName": "", "userPass": ""}
+var userInfo = {"userName": "", "userPass": "", "attack": 1, "defense": 1, "creditMult": 1}
 var localLog = []
 var userList = {} # Variable used to save all user data on the network, keys are user names
 var networkInfo = {"networkName": "defaultNet", "messageLog": [], "autosaveInterval": 10, 
-	"netSavePath": "", "netPort": 4242, "netPass": "password", "userList": userList}
-var sharedNetworkInfo = {"networkName":"temp", "messageLog": [], "connected_users": {}}
+	"netSavePath": "", "netPort": 4242, "netPass": "password", "userList": userList, "minUsers": 2,
+	"gameRunning": false, "cycleDuration": 10, "baseCredits": 10}
+var sharedNetworkInfo = {"networkName":"temp", "messageLog": [], "connectedUsers": {}}
 var userPass = ""
 var commandList = {"/credits": "Display users current credits",
-	"/help": "Show list of commands"}
+	"/help": "Show list of commands",
+	"/w": "<username> <message> Send whisper to another user"}
 onready var port = int($joinPopup/portInput.text)
 onready var ipAddress = $joinPopup/ipInput.text
 
@@ -89,9 +92,13 @@ func _on_inputText_text_entered(newText):
 			process_command(newText)
 			$inputText.clear()
 		else:
-			#Create the message and tell everyone else to add it to their history
-			rpc("send_message", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
-			$inputText.clear()
+			if get_tree().has_network_peer():
+				#Create the message and tell everyone else to add it to their history
+				rpc("send_message", "network", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
+				$inputText.clear()
+			else:
+				update_message("local", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
+				$inputText.clear()
 
 func _on_userApplyButton_pressed():
 	$userSettingsPopup.visible = false
@@ -104,6 +111,8 @@ func _on_userApplyButton_pressed():
 
 func _on_yesBtn_pressed():
 	$overwriteSave.visible = false
+	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
+	save_localLog()
 	create_network()
 	save_network()
 
@@ -132,30 +141,76 @@ func _on_logLocPopup_dir_selected(dir):
 func process_command(newCommand):
 	var command = newCommand.split(" ")
 	if not commandList.has(command[0]):
-		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
 	elif command[0] == "/help":
-		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
 		for item in commandList:
 			$messageBox.append_bbcode(item + ": " + commandList[item])
 			$messageBox.newline()
 	
 	elif command[0] == "/credits":
 		rpc_id(1, "get_credits", prefs["userName"])
+	elif command[0] == "/w":
+		# /w [userAlias] [message]
+		send_whisper(command)
 
 func create_network():
+	# Adjusting popup buttons
 	filePopup.set_item_disabled(3, false)
 	editPopup.set_item_disabled(0, true)
+	
+	# Creating multiplayer server
 	var server : NetworkedMultiplayerENet = NetworkedMultiplayerENet.new()
 	server.create_server(networkInfo["netPort"],MAX_PLAYERS)
 	get_tree().set_network_peer(server)
+	
+	# Loading and setting network variables
 	autosave_network(networkInfo["autosaveInterval"])
 	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
-	sharedNetworkInfo["messageLog"] = networkInfo["messageLog"]
+	sharedNetworkInfo["messageLog"] = networkInfo["messageLog"].duplicate()
 	load_localLog()
 	sync_messages()
-	update_message("network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server hosted on port " + str(port))
+	cycleTimer = Timer.new()
+	add_child(cycleTimer)
+	cycleTimer.wait_time = networkInfo["cycleDuration"]
+	cycleTimer.connect("timeout", self, "_process_cycle")
+	
+	# Loading network host data
+	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server hosted on port " + str(port))
 	add_user(get_tree().get_network_unique_id(), prefs["userName"], prefs["userAlias"])
 	refresh_connectedList()
+	if not networkInfo["userList"].has(prefs["userName"]):
+		create_userInfo(prefs["userName"], networkInfo["netPass"])
+	update_userInfo(networkInfo["userList"][prefs["userName"]].duplicate())
+
+func start_game(startMessage):
+	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], startMessage)
+	cycleTimer.start()
+
+func stop_game(stopMessage):
+	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], stopMessage)
+	cycleTimer.stop()
+
+func _process_cycle():
+	var networkMult = 0
+	# Calculating how many credits to generate
+	for user in connectedList:
+		networkMult += networkInfo["userList"][connectedList[user]]["creditMult"]
+	var cycleCredits = round(networkInfo["baseCredits"] * networkMult)
+	
+	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Generated " + str(cycleCredits) + " credits this cycle")
+	
+	# Giving credits to each connected user
+	for user in connectedList:
+		networkInfo["userList"][connectedList[user]]["currentCredits"] += cycleCredits
+		networkInfo["userList"][connectedList[user]]["totalCredits"] += cycleCredits
+	
+	# Updating each users userInfo
+	for user in connectedList:
+		if user == 1:
+			update_userInfo(networkInfo["userList"][connectedList[user]].duplicate())
+		else:
+			rpc_id(user, "update_userInfo", networkInfo["userList"][connectedList[user]].duplicate())
 
 func connected():
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Connection succesful, attempting login...")
@@ -168,35 +223,44 @@ func connected_fail():
 func server_disconnected():
 	#Server just closed
 	print("server_disconnected")
+	save_localLog()
+	$connectedBox.clear()
+	$messageBox.clear()
+	filePopup.set_item_disabled(3, true)
+	editPopup.set_item_disabled(0, false)
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server Closed")
 
 func add_user(ID, userName, alias):
 	connectedList[ID] = userName
-	sharedNetworkInfo["connected_users"][alias] = ID
+	sharedNetworkInfo["connectedUsers"][alias] = ID
 	aliasIDs[ID] = alias
-	rpc("update_sharedNetworkInfo", sharedNetworkInfo)
-	refresh_connectedList()
-	send_message(OS.get_datetime(), prefs["sysColor"], prefs["sysName"], alias + " connected")
+	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
+	rpc("refresh_connectedList")
+	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], alias + " connected")
+	if not networkInfo["gameRunning"]:
+		if len(connectedList) >= networkInfo["minUsers"]:
+			start_game("Sufficient users connected, beginning game")
 
 func user_left(ID):
 	if get_tree().get_network_unique_id() == 1: # Only run on server
 		if connectedList.has(ID): # If client failed to login, skip
 			var discAlias = aliasIDs[ID]
-			send_message(OS.get_datetime(), prefs["sysColor"], prefs["sysName"], aliasIDs[ID] + " disconnected")
+			rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], aliasIDs[ID] + " disconnected")
 			connectedList.erase(ID) # remove  from connectedList
-			sharedNetworkInfo["connected_users"].erase(discAlias)
-			rpc("update_sharedNetworkInfo", sharedNetworkInfo)
-			refresh_connectedList()
+			sharedNetworkInfo["connectedUsers"].erase(discAlias)
+			rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
+			rpc("refresh_connectedList")
+			if len(connectedList) < networkInfo["minUsers"]:
+				stop_game("Insufficient users, game stopped")
 
-func refresh_connectedList():
-	$statusBox.clear()
-	var current_aliases = sharedNetworkInfo["connected_users"].keys()
+remote func update_sharedNetworkInfo(newInfo):
+	sharedNetworkInfo = newInfo.duplicate()
+
+remotesync func refresh_connectedList():
+	$connectedBox.clear()
+	var current_aliases = sharedNetworkInfo["connectedUsers"].keys()
 	for line in current_aliases:
-		$statusBox.add_item(line)
-
-remote func update_sharedNetworkInfo(new_sharedNetworkInfo):
-	sharedNetworkInfo = new_sharedNetworkInfo
-	refresh_connectedList()
+		$connectedBox.add_item(line)
 
 func update_message(messageType, dateTime, color, name, newText):
 	var newMessage = "[color=" + color + "]" + name + ": "+"[/color]" + newText + "\n"
@@ -208,6 +272,7 @@ func update_message(messageType, dateTime, color, name, newText):
 		if get_tree().get_network_unique_id() == 1:
 			networkInfo["messageLog"].append([dateTime, newMessage])
 			sharedNetworkInfo["messageLog"].append([dateTime, newMessage])
+			rset("sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	elif messageType == "local":
 		localLog.append([dateTime, newMessage])
 		save_localLog()
@@ -216,6 +281,12 @@ func update_message(messageType, dateTime, color, name, newText):
 	else:
 		pass
 
+func simple_update(datedMessage):
+	if prefs["dispTimeStamps"] == false:
+		$messageBox.append_bbcode(datedMessage[1])
+	else:
+		$messageBox.append_bbcode(get_formatted_time(datedMessage[0]) + datedMessage[1])
+
 func sync_messages(): # Printing shared and local message in order of time stamp
 	var totalMessages = len(sharedNetworkInfo["messageLog"]) + len(localLog)
 	var localIndex = 0
@@ -223,52 +294,54 @@ func sync_messages(): # Printing shared and local message in order of time stamp
 	print("totalMessages: " + str(totalMessages))
 	print("shared messages: " + str(len(sharedNetworkInfo["messageLog"])))
 	print("local messages: " + str(len(localLog)))
-	if len(localLog) == 0: # Check if local log is empty
-		for i in range(0, len(sharedNetworkInfo["messageLog"])):
-			if prefs["dispTimeStamps"] == false:
-				$messageBox.append_bbcode(sharedNetworkInfo["messageLog"][i][1])
-			else:
-				$messageBox.append_bbcode(get_formatted_time(sharedNetworkInfo["messageLog"][i][0]) + 
-				sharedNetworkInfo["messageLog"][i][1])
-	else:
-		for i in range(totalMessages):
-			# If timestamp of network message is less than timestamp of local message, print network
-			if OS.get_unix_time_from_datetime(sharedNetworkInfo["messageLog"][sharedIndex][0])  <= OS.get_unix_time_from_datetime(localLog[localIndex][0]):
-				if prefs["dispTimeStamps"] == false:
-					$messageBox.append_bbcode(sharedNetworkInfo["messageLog"][sharedIndex][1])
-				else:
-					$messageBox.append_bbcode(get_formatted_time(sharedNetworkInfo["messageLog"][sharedIndex][0]) + 
-					sharedNetworkInfo["messageLog"][sharedIndex][1])
-				if sharedIndex < len(sharedNetworkInfo["messageLog"]) - 1:
-					sharedIndex += 1
-			else:
-				if prefs["dispTimeStamps"] == false:
-					$messageBox.append_bbcode(localLog[localIndex][1])
-				else:
-					$messageBox.append_bbcode(get_formatted_time(localLog[localIndex][0]) + 
-					sharedNetworkInfo["messageLog"][sharedIndex][1])
-				if localIndex < len(localLog) - 1:
-					localIndex += 1
+	
+	for i in range(totalMessages - 1):
+		# At end of local log, only print network
+		if localIndex == len(localLog):
+			simple_update(sharedNetworkInfo["messageLog"][sharedIndex])
+			sharedIndex += 1
+		# At end of network log, only print local
+		elif sharedIndex == len(sharedNetworkInfo["messageLog"]):
+			simple_update(localLog[localIndex])
+			localIndex += 1
+		# If timestamp of network message is equal timestamp of local message, print network then local
+#		elif OS.get_unix_time_from_datetime(sharedNetworkInfo["messageLog"][sharedIndex][0]) == OS.get_unix_time_from_datetime(localLog[localIndex][0]):
+#			simple_update(sharedNetworkInfo["messageLog"][sharedIndex])
+#			simple_update(localLog[localIndex])
+#			sharedIndex += 1
+#			localIndex += 1
+		# Network message is more recent
+		elif OS.get_unix_time_from_datetime(sharedNetworkInfo["messageLog"][sharedIndex][0]) <= OS.get_unix_time_from_datetime(localLog[localIndex][0]):
+			simple_update(sharedNetworkInfo["messageLog"][sharedIndex])
+			sharedIndex += 1
+		# Local message is more recent
+		else:
+			simple_update(localLog[localIndex])
+			localIndex += 1
 
-remotesync func send_message(curTime, color, name, newText):
-	update_message("network", curTime, color, name, newText)
+remotesync func send_message(messageType, curTime, color, name, newText):
+	update_message(messageType, curTime, color, name, newText)
 
 func disc(): # Disconnect but dont close
 	# If not server host
 	if get_tree().get_network_unique_id() != 1:
 		get_tree().network_peer = null
 		connectedList.clear()
-		$statusBox.clear()
+		save_localLog()
+		$connectedBox.clear()
 		$messageBox.clear()
+		$statusBox.clear()
 		filePopup.set_item_disabled(3, true)
 		editPopup.set_item_disabled(0, false)
 	else:
 		get_tree().network_peer = null
 		saveTimer.stop()
+		save_localLog()
 		save_network()
 		connectedList.clear()
-		$statusBox.clear()
+		$connectedBox.clear()
 		$messageBox.clear()
+		$statusBox.clear()
 		filePopup.set_item_disabled(3, true)
 		editPopup.set_item_disabled(0, false)
 
@@ -276,28 +349,32 @@ func exit():
 	# If not server host
 	if get_tree().get_network_unique_id() != 1:
 		get_tree().network_peer = null
+		save_localLog()
 		get_tree().quit()
 	
 	else:
 		get_tree().network_peer = null
 		saveTimer.stop()
+		save_localLog()
 		save_network()
 		connectedList.clear()
-		$statusBox.clear()
+		$connectedBox.clear()
 		$messageBox.clear()
 		get_tree().quit()
 
 func save_prefs():
+	var prefsPath = "user://preferences.dat"
 	var file = File.new()
-	file.open("user://preferences.dat", File.WRITE)
+	file.open(prefsPath, File.WRITE)
 	file.store_var(prefs)
 	file.close()
 
 func load_prefs():
+	var prefsPath = "user://preferences.dat"
 	var file = File.new()
-	if not file.file_exists("user://preferences.dat"):
+	if not file.file_exists(prefsPath):
 		save_prefs()
-	file.open("user://preferences.dat", File.READ)
+	file.open(prefsPath, File.READ)
 	prefs = file.get_var()
 	file.close()
 	
@@ -306,11 +383,25 @@ func load_prefs():
 	$userSettingsPopup/logLocInput.text = prefs["localLogLocation"]
 	$userSettingsPopup/aliasInput.text = prefs["userAlias"]
 
-func create_user_info(userName, password):
-	userInfo["userName"] = userName
-	userInfo['userPass'] = password
-	userInfo["userCredits"] = 100
-	return(userInfo)
+func create_userInfo(userName, password):
+	networkInfo["userList"][userName] = {}
+	networkInfo["userList"][userName]["userName"] = userName
+	networkInfo["userList"][userName]["userPass"] = password
+	networkInfo["userList"][userName]["currentCredits"] = 100
+	networkInfo["userList"][userName]["creditMult"] = 1
+	networkInfo["userList"][userName]["attack"] = 1
+	networkInfo["userList"][userName]["defense"] = 1
+	networkInfo["userList"][userName]["totalCredits"] = 100
+
+remote func update_userInfo(newUserInfo):
+	userInfo = newUserInfo.duplicate()
+	$statusBox.clear()
+	$statusBox.add_item("User name: " + userInfo["userName"])
+	$statusBox.add_item("Credits: " + str(userInfo["currentCredits"]))
+	$statusBox.add_item("Credit mult: " + str(userInfo["creditMult"]))
+	$statusBox.add_item("Attack: " + str(userInfo["attack"]))
+	$statusBox.add_item("Defense: " + str(userInfo["defense"]))
+	$statusBox.add_item("Total credits: " + str(userInfo["totalCredits"]))
 
 func check_network(networkName): # Check if save already exists before overwriting
 	var file = File.new()
@@ -318,16 +409,16 @@ func check_network(networkName): # Check if save already exists before overwriti
 		$overwriteSave/warningLabel.text = "File " + networkName + ".dat already exists. Overwrite?"
 		$overwriteSave.visible = true
 	else:
-		networkInfo["userList"][prefs["userName"]] = create_user_info(prefs["userName"], userPass)
 		save_network()
+		save_localLog()
 		create_network()
 
 func load_localLog():
-	var logPath = prefs["localLogLocation"] + "/" + sharedNetworkInfo["networkName"] + ".dat"
+	var logPath = prefs["localLogLocation"] + sharedNetworkInfo["networkName"] + "Log.dat"
 	print("loading local log at: " + str(prefs["localLogLocation"]))
 	var file = File.new()
 	if file.file_exists(logPath):
-		file.open(prefs["localLogLocation"], File.READ)
+		file.open(logPath, File.READ)
 		localLog = file.get_var()
 		file.close()
 	else:
@@ -335,7 +426,7 @@ func load_localLog():
 		save_localLog()
 
 func save_localLog():
-	var logPath = prefs["localLogLocation"] + sharedNetworkInfo["networkName"] + ".dat"
+	var logPath = prefs["localLogLocation"] + sharedNetworkInfo["networkName"] + "Log.dat"
 	var file = File.new()
 	file.open(logPath, File.WRITE)
 	file.store_var(localLog)
@@ -374,63 +465,63 @@ remote func net_login(userName, password, alias):
 	
 	if get_tree().get_network_unique_id() == 1: # Checking that only run by server
 		if currentList.has(userName): # Checking if username is already connected
-			rpc_id(get_tree().get_rpc_sender_id(), "user_already_logged")
+			rpc_id(get_tree().get_rpc_sender_id(), "login_fail", "User already logged in")
 		
 		# Checking if the user has logged in before
 		elif networkInfo["userList"].has(userName): 
 			# Login success for returning user
 			if networkInfo["userList"][userName]["userPass"] == password:
-				rpc_id(get_tree().get_rpc_sender_id(), "login_success", sharedNetworkInfo)
+				rpc_id(get_tree().get_rpc_sender_id(), "login_success")
+				rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 				add_user(senderID, userName, check_alias(alias, senderID))
 			else:
 				# Returning user used incorrect password
-				rpc_id(get_tree().get_rpc_sender_id(), "login_fail")
+				rpc_id(get_tree().get_rpc_sender_id(), "login_fail", "Invalid password")
 			
 		# First time user
 		elif password == networkInfo["netPass"]:
 			# Login success for first time user
-			networkInfo["userList"][userName] = create_user_info(userName, password)
-			rpc_id(get_tree().get_rpc_sender_id(), "login_success", sharedNetworkInfo)
+			create_userInfo(userName, password)
+			rpc_id(get_tree().get_rpc_sender_id(), "login_success")
+			rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 			add_user(senderID, userName, check_alias(alias, senderID))
 		
 		else:
-			rpc_id(get_tree().get_rpc_sender_id(), "login_fail")
+			rpc_id(get_tree().get_rpc_sender_id(), "login_fail", "Invalid login info")
 
 func check_alias(alias, senderID):
 	# Checking if alias is already in use
-	if not sharedNetworkInfo["connected_users"].has(alias):
+	if not sharedNetworkInfo["connectedUsers"].has(alias):
 		return(alias)
 	# Alias already in use,
 	# Appending number to alias to avoid duplicates
 	else: 
 		var aliasNum = 1
 		var newAlias = alias + str(aliasNum)
-		while sharedNetworkInfo["connected_users"].has(newAlias):
+		while sharedNetworkInfo["connectedUsers"].has(newAlias):
 			aliasNum +=1
 			newAlias = alias + str(aliasNum)
 		rpc_id(senderID, "client_update_alias", newAlias)
 		return(newAlias)
 
-remote func login_success(netInfo):
-	sharedNetworkInfo = netInfo
-	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Login succesful")
+remote func login_success():
 	load_localLog()
+	$messageBox.clear()
 	sync_messages()
+	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Login succesful")
 
-remote func login_fail():
-	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid login, disconnected")
+remote func login_fail(message):
+	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], message)
 	get_tree().network_peer = null
-
-remote func user_already_logged():
-	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "User name already in use, connection refused")
-	get_tree().network_peer = null
+	filePopup.set_item_disabled(3, true)
+	editPopup.set_item_disabled(0, false)
 
 remote func server_message(message):
 	update_message("local", OS.get_datetime(), "silver", "SERVER", message)
 
 remote func get_credits(userName):
 	if networkInfo["userList"].has(userName):
-		var creditMessage = userName + "'s credits: '" + str(networkInfo["userList"][userName]["userCredits"])
+		var creditMessage = userName + "'s credits: '" + str(networkInfo["userList"][userName]["currentCredits"])
 		rpc_id(get_tree().get_rpc_sender_id(), "server_message", creditMessage)
 	else:
 		rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Unknown user")
@@ -442,5 +533,14 @@ func get_formatted_time(dateTime):
 remote func client_update_alias(newAlias):
 	prefs["userAlias"] = newAlias
 
-
+func send_whisper(command):
+	var wMessage = ""
+	for i in range(2, len(command)):
+		wMessage += " " + command[i]
+	if not sharedNetworkInfo["connectedUsers"].has(command[1]):
+		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Unknown user: " + command[1])
+	else:
+		rpc_id(sharedNetworkInfo["connectedUsers"][command[1]], "send_message", "local",
+		OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
+		update_message("local", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
 

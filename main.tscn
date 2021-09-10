@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=2]
+[gd_scene load_steps=9 format=2]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
 [ext_resource path="res://Fonts/Roboto-Regular.ttf" type="DynamicFontData" id=2]
@@ -15,6 +15,9 @@ bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
 
 [sub_resource type="DynamicFont" id=4]
 font_data = ExtResource( 2 )
+
+[sub_resource type="StyleBoxFlat" id=5]
+bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
 
 [node name="main" type="Control"]
 anchor_right = 1.0
@@ -67,11 +70,11 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="statusBox" type="ItemList" parent="."]
+[node name="connectedBox" type="ItemList" parent="."]
 margin_left = 760.0
 margin_top = 30.0
 margin_right = 1010.0
-margin_bottom = 550.0
+margin_bottom = 380.0
 theme = ExtResource( 3 )
 custom_styles/bg = SubResource( 3 )
 __meta__ = {
@@ -390,10 +393,6 @@ margin_bottom = 40.0
 theme = ExtResource( 3 )
 text = "defaultUser"
 align = 2
-max_length = 20
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="userApplyButton" type="Button" parent="userSettingsPopup"]
 margin_left = 120.0
@@ -498,6 +497,17 @@ access = 2
 filters = PoolStringArray( "*.dat" )
 current_dir = "/home/alex/Godot/IdleChat"
 current_path = "/home/alex/Godot/IdleChat/"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="statusBox" type="ItemList" parent="."]
+margin_left = 760.0
+margin_top = 400.0
+margin_right = 1010.0
+margin_bottom = 550.0
+theme = ExtResource( 3 )
+custom_styles/bg = SubResource( 5 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
