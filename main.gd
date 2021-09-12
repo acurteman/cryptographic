@@ -17,8 +17,10 @@ var networkInfo = {"networkName": "defaultNet", "messageLog": [], "autosaveInter
 	"gameRunning": false, "cycleDuration": 10, "baseCredits": 10}
 var sharedNetworkInfo = {"networkName":"temp", "messageLog": [], "connectedUsers": {}}
 var userPass = ""
-var commandList = {"/credits": "Display users current credits",
+var commandList = {
+	"/changepass": "<newpassword> Change your current password",
 	"/help": "Show list of commands",
+	"/resetpass": "Reset your password to the default network password",
 	"/w": "<username> <message> Send whisper to another user"}
 onready var port = int($joinPopup/portInput.text)
 onready var ipAddress = $joinPopup/ipInput.text
@@ -142,14 +144,19 @@ func process_command(newCommand):
 	var command = newCommand.split(" ")
 	if not commandList.has(command[0]):
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
+	
+	elif command[0] == "/changepass":
+		rpc_id(1, "change_password", command)
+	
 	elif command[0] == "/help":
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
 		for item in commandList:
 			$messageBox.append_bbcode(item + ": " + commandList[item])
 			$messageBox.newline()
 	
-	elif command[0] == "/credits":
-		rpc_id(1, "get_credits", prefs["userName"])
+	elif command[0] == "/resetpass":
+		reset_password(command)
+	
 	elif command[0] == "/w":
 		# /w [userAlias] [message]
 		send_whisper(command)
@@ -192,18 +199,15 @@ func stop_game(stopMessage):
 	cycleTimer.stop()
 
 func _process_cycle():
-	var networkMult = 0
 	# Calculating how many credits to generate
-	for user in connectedList:
-		networkMult += networkInfo["userList"][connectedList[user]]["creditMult"]
-	var cycleCredits = round(networkInfo["baseCredits"] * networkMult)
+	var cycleCredits = networkInfo["baseCredits"] * len(connectedList)
 	
 	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Generated " + str(cycleCredits) + " credits this cycle")
 	
 	# Giving credits to each connected user
 	for user in connectedList:
-		networkInfo["userList"][connectedList[user]]["currentCredits"] += cycleCredits
-		networkInfo["userList"][connectedList[user]]["totalCredits"] += cycleCredits
+		networkInfo["userList"][connectedList[user]]["currentCredits"] += cycleCredits * networkInfo["userList"][connectedList[user]]["creditMult"]
+		networkInfo["userList"][connectedList[user]]["totalCredits"] += cycleCredits * networkInfo["userList"][connectedList[user]]["creditMult"]
 	
 	# Updating each users userInfo
 	for user in connectedList:
@@ -471,6 +475,7 @@ remote func net_login(userName, password, alias):
 		elif networkInfo["userList"].has(userName): 
 			# Login success for returning user
 			if networkInfo["userList"][userName]["userPass"] == password:
+				rpc_id(get_tree().get_rpc_sender_id(), "update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 				rpc_id(get_tree().get_rpc_sender_id(), "login_success")
 				rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 				add_user(senderID, userName, check_alias(alias, senderID))
@@ -482,6 +487,7 @@ remote func net_login(userName, password, alias):
 		elif password == networkInfo["netPass"]:
 			# Login success for first time user
 			create_userInfo(userName, password)
+			rpc_id(get_tree().get_rpc_sender_id(), "update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 			rpc_id(get_tree().get_rpc_sender_id(), "login_success")
 			rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 			add_user(senderID, userName, check_alias(alias, senderID))
@@ -519,15 +525,19 @@ remote func login_fail(message):
 remote func server_message(message):
 	update_message("local", OS.get_datetime(), "silver", "SERVER", message)
 
-remote func get_credits(userName):
-	if networkInfo["userList"].has(userName):
-		var creditMessage = userName + "'s credits: '" + str(networkInfo["userList"][userName]["currentCredits"])
-		rpc_id(get_tree().get_rpc_sender_id(), "server_message", creditMessage)
-	else:
-		rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Unknown user")
-
 func get_formatted_time(dateTime):
-	var formattedTime = str(dateTime["hour"]) + ":" + str(dateTime["minute"]) + ":" + str(dateTime["second"])
+	var hour = str(dateTime["hour"])
+	var minute = str(dateTime["minute"])
+	var second = str(dateTime["second"])
+	
+	if len(hour) == 1:
+		hour = "0" + hour
+	if len(minute) == 1:
+		minute = "0" + minute
+	if len(second) == 1:
+		second = "0" + second
+	
+	var formattedTime = hour + ":" + minute + ":" + second
 	return(formattedTime)
 
 remote func client_update_alias(newAlias):
@@ -543,4 +553,34 @@ func send_whisper(command):
 		rpc_id(sharedNetworkInfo["connectedUsers"][command[1]], "send_message", "local",
 		OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
 		update_message("local", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
+
+remote func change_password(command):
+	if command[0] == "/resetpass": # User requested password reset
+		networkInfo["userList"][commandList[get_tree().get_rpc_sender_id()]]["userPass"] = networkInfo["netPass"]
+		rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Password succesfully reset")
+
+	elif not len(command) >= 2:
+		rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Invalid syntax: /changepass <new password>")
+
+	else:
+		var newPass = command[1]
+		networkInfo["userList"][get_tree().get_rpc_sender_id()]["userPass"] = newPass
+		save_network()
+		rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Password succesfully changed")
+
+func reset_password(command):
+	if not get_tree().get_network_unique_id() == 1: # If user is reseting their own pass
+		rpc_id(1, "change_password", command)
+	
+	elif not len(command) >= 2:
+		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid syntax: /resetpass <user>")
+		
+	elif not networkInfo["userList"].has(command[1]):
+		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Unknown user: " + str(command[1]))
+		
+	else:
+		networkInfo["userList"][command[1]]["userPass"] = networkInfo["netPass"]
+		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Password reset for " + str(command[1]))
+
+
 
