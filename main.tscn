@@ -13,11 +13,11 @@ font_data = ExtResource( 2 )
 [sub_resource type="StyleBoxFlat" id=3]
 bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
 
-[sub_resource type="DynamicFont" id=4]
-font_data = ExtResource( 2 )
-
-[sub_resource type="StyleBoxFlat" id=5]
+[sub_resource type="StyleBoxFlat" id=4]
 bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
+
+[sub_resource type="DynamicFont" id=5]
+font_data = ExtResource( 2 )
 
 [node name="main" type="Control"]
 anchor_right = 1.0
@@ -74,9 +74,20 @@ __meta__ = {
 margin_left = 760.0
 margin_top = 30.0
 margin_right = 1010.0
-margin_bottom = 380.0
+margin_bottom = 340.0
 theme = ExtResource( 3 )
 custom_styles/bg = SubResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="statusBox" type="ItemList" parent="."]
+margin_left = 760.0
+margin_top = 360.0
+margin_right = 1010.0
+margin_bottom = 590.0
+theme = ExtResource( 3 )
+custom_styles/bg = SubResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -86,7 +97,7 @@ margin_left = 10.0
 margin_top = 560.0
 margin_right = 750.0
 margin_bottom = 589.0
-custom_fonts/font = SubResource( 4 )
+custom_fonts/font = SubResource( 5 )
 max_length = 255
 __meta__ = {
 "_edit_use_anchors_": false
@@ -342,7 +353,6 @@ __meta__ = {
 }
 
 [node name="userSettingsPopup" type="Popup" parent="."]
-visible = true
 margin_left = 290.0
 margin_top = 130.0
 margin_right = 590.0
@@ -390,6 +400,7 @@ margin_left = 100.0
 margin_top = 10.0
 margin_right = 290.0
 margin_bottom = 40.0
+focus_next = NodePath("../aliasInput")
 theme = ExtResource( 3 )
 text = "defaultUser"
 align = 2
@@ -399,6 +410,7 @@ margin_left = 120.0
 margin_top = 280.0
 margin_right = 180.0
 margin_bottom = 305.0
+focus_next = NodePath("../usernameInput")
 theme = ExtResource( 3 )
 text = "Apply"
 __meta__ = {
@@ -410,6 +422,7 @@ margin_left = 160.0
 margin_top = 100.0
 margin_right = 290.0
 margin_bottom = 129.0
+focus_next = NodePath("../userApplyButton")
 theme = ExtResource( 3 )
 text = "red"
 align = 2
@@ -479,6 +492,7 @@ margin_left = 100.0
 margin_top = 60.0
 margin_right = 290.0
 margin_bottom = 84.0
+focus_next = NodePath("../userColor")
 theme = ExtResource( 3 )
 text = "defaultAlias"
 align = 2
@@ -500,17 +514,7 @@ current_path = "/home/alex/Godot/IdleChat/"
 __meta__ = {
 "_edit_use_anchors_": false
 }
-
-[node name="statusBox" type="ItemList" parent="."]
-margin_left = 760.0
-margin_top = 400.0
-margin_right = 1010.0
-margin_bottom = 550.0
-theme = ExtResource( 3 )
-custom_styles/bg = SubResource( 5 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
+[connection signal="item_activated" from="connectedBox" to="." method="_on_connectedBox_item_activated"]
 [connection signal="text_entered" from="inputText" to="." method="_on_inputText_text_entered"]
 [connection signal="pressed" from="joinPopup/joinButton" to="." method="_on_joinButton_pressed"]
 [connection signal="pressed" from="hostPopup/hostButton" to="." method="_on_hostButton_pressed"]
