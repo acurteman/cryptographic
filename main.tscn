@@ -28,8 +28,9 @@ __meta__ = {
 }
 
 [node name="backgroundColor" type="ColorRect" parent="."]
-margin_right = 1024.0
-margin_bottom = 600.0
+anchor_right = 0.996
+anchor_bottom = 1.0
+margin_right = 4.09595
 color = Color( 0.133333, 0.133333, 0.133333, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -56,10 +57,13 @@ __meta__ = {
 }
 
 [node name="messageBox" type="RichTextLabel" parent="."]
-margin_left = 10.0
-margin_top = 30.0
-margin_right = 750.0
-margin_bottom = 550.0
+anchor_left = 0.01
+anchor_top = 0.05
+anchor_right = 0.732
+anchor_bottom = 0.917
+margin_left = -0.240001
+margin_right = 0.431946
+margin_bottom = -0.200012
 focus_mode = 2
 custom_styles/normal = SubResource( 1 )
 custom_fonts/normal_font = SubResource( 2 )
@@ -71,10 +75,13 @@ __meta__ = {
 }
 
 [node name="connectedBox" type="ItemList" parent="."]
-margin_left = 760.0
-margin_top = 30.0
-margin_right = 1010.0
-margin_bottom = 340.0
+anchor_left = 0.742
+anchor_top = 0.05
+anchor_right = 0.986
+anchor_bottom = 0.567
+margin_left = 0.191956
+margin_right = 0.335938
+margin_bottom = -0.200012
 theme = ExtResource( 3 )
 custom_styles/bg = SubResource( 3 )
 __meta__ = {
@@ -82,10 +89,13 @@ __meta__ = {
 }
 
 [node name="statusBox" type="ItemList" parent="."]
-margin_left = 760.0
-margin_top = 360.0
-margin_right = 1010.0
-margin_bottom = 590.0
+anchor_left = 0.742
+anchor_top = 0.6
+anchor_right = 0.986
+anchor_bottom = 0.983
+margin_left = 0.191956
+margin_right = 0.335938
+margin_bottom = 0.199951
 theme = ExtResource( 3 )
 custom_styles/bg = SubResource( 4 )
 __meta__ = {
@@ -93,10 +103,14 @@ __meta__ = {
 }
 
 [node name="inputText" type="LineEdit" parent="."]
-margin_left = 10.0
-margin_top = 560.0
-margin_right = 750.0
-margin_bottom = 589.0
+anchor_left = 0.01
+anchor_top = 0.933
+anchor_right = 0.732
+anchor_bottom = 0.933
+margin_left = -0.240001
+margin_top = 0.200012
+margin_right = 0.431946
+margin_bottom = 29.2
 custom_fonts/font = SubResource( 5 )
 max_length = 255
 __meta__ = {
@@ -514,6 +528,7 @@ current_path = "/home/alex/Godot/IdleChat/"
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
 [connection signal="item_activated" from="connectedBox" to="." method="_on_connectedBox_item_activated"]
 [connection signal="text_entered" from="inputText" to="." method="_on_inputText_text_entered"]
 [connection signal="pressed" from="joinPopup/joinButton" to="." method="_on_joinButton_pressed"]

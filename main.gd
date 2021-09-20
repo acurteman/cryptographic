@@ -1,32 +1,57 @@
 extends Control
 
 var connectedList = {} # Used by the server to track usernames and IDs for connected users
-var aliasIDs = {} # Reversed list of users with IDs as keys and aliases as values
+var aliasToID = {} # List of users with alias's as keys and ID's as values
+var IDtoAlais = {} # Reversed list of users with IDs as keys and aliases as values
 var MAX_PLAYERS = 32
 var filePopup
 var editPopup
 var saveTimer
 var cycleTimer
-var prefs = {"userName": "defaultUser","userAlias": "defaultAlias", "userColor": "red", "sysColor": "gray", "sysName": "system",
-	"dispTimeStamps": true, "localLogLocation": "user://"}
+var prefs = {
+	"userName": "defaultUser",
+	"userAlias": "defaultAlias",
+	"userColor": "red",
+	"sysColor": "gray",
+	"sysName": "system",
+	"dispTimeStamps": true,
+	"localLogLocation": "user://"}
 var userInfo = {}
 var localLog = []
 var userList = {} # Variable used to save all user data on the network, keys are user names
-var networkInfo = {"networkName": "defaultNet", "messageLog": [], "autosaveInterval": 10, 
-	"netSavePath": "", "netPort": 4242, "netPass": "password", "userList": userList, "minUsers": 2,
-	"gameRunning": false, "cycleDuration": 10, "baseCredits": 10}
-var sharedNetworkInfo = {"networkName":"temp", "messageLog": [], "connectedUsers": {}, "processOrder": []}
+var networkInfo = {
+	"networkName": "defaultNet",
+	"messageLog": [],
+	"autosaveInterval": 10, 
+	"netSavePath": "",
+	"netPort": 4242,
+	"netPass": "password",
+	"userList": userList,
+	"minUsers": 2,
+	"gameRunning": false,
+	"cycleDuration": 10,
+	"baseCredits": 10,
+	"maxFirewallLevel": 2}
+var sharedNetworkInfo = {
+	"networkName":"temp",
+	"messageLog": [],
+	"connectedUsers": {},
+	"processOrder": []}
 var userPass = ""
 var commandList = {
+	"/buy": "<item name> <quanitity> Purchase an item",
 	"/changealias": "<newalias> Change your current alias",
 	"/changecolor": "<newcolor> Change your current color",
 	"/changepass": "<newpassword> Change your current password",
-	"/cycle": "<action> <targetuser> Set your action for the current cycle, with optional target user",
+	"/cycle": "<action> <target> Set your action for the current cycle, with optional target user",
 	"/cyclelist": "Show a list of available cycle actions",
+	"/exec": "<item> <target> Execute a purchased item",
 	"/help": "Show list of commands",
+	"/inv": "Show current inventory",
 	"/listmodes": "Show a list of process modes",
 	"/resetpass": "Reset your password to the default network password",
 	"/setmode": "<mode> Set your current process mode",
+	"/shoplist": "Show a list of items to buy",
 	"/startgame": "SERVER ONLY, forces the game to start",
 	"/stopgame": "SERVER ONLY, forces the game to stop",
 	"/w": "<username> <message> Send whisper to another user"}
@@ -36,12 +61,21 @@ var processModes = {
 	"defense": "Defense stat recieves a .3 increase each cycle",
 	"creditMult": "Credit multiplier stat recieves a .3 increase each cycle"}
 var cycleActionList = {
-	"hackWallet": "Attempt to steal credits from another users wallet"}
+	"hackWallet": "Attempt to steal credits from another users wallet",
+	"fortFirewall": "Fortify your firewall, which will prevent one succesfull attack"}
+var shopItems = {
+	"hackWallet": 100,
+	"fortFirewall": 50}
+var emptyInventory = {
+	"hackWallet": 0,
+	"fortFirewall": 0}
+var rng = RandomNumberGenerator.new()
 onready var port = int($joinPopup/portInput.text)
 onready var ipAddress = $joinPopup/ipInput.text
 
 func _ready():
 	load_prefs()
+	rng.randomize()
 	
 	get_tree().connect("connection_failed", self, "connected_fail")
 	get_tree().connect("network_peer_disconnected",self,"user_left")
@@ -77,7 +111,7 @@ func _on_file_item_pressed(ID):
 
 func _on_edit_item_pressed(ID):
 	if editPopup.get_item_text(ID) == "User Settings":
-		$userSettingsPopup.visible = true
+		$userSettingsPopup.popup()
 
 func _on_hostButton_pressed():
 	$hostPopup.visible = false
@@ -130,6 +164,7 @@ func _on_yesBtn_pressed():
 	$overwriteSave.visible = false
 	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
 	save_localLog()
+	create_userInfo(prefs["userName"], networkInfo["netPass"])
 	create_network()
 	save_network()
 
@@ -163,8 +198,12 @@ func process_command(newCommand):
 	if not commandList.has(command[0]):
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
 	
+	elif command[0] == "/buy":
+		check_buy(command)
+	
 	elif command[0] == "/changealias":
-		change_alias(command)
+		#change_alias(command)
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently disabled')
 	
 	elif command[0] == "/changecolor":
 		change_color(command)
@@ -181,10 +220,19 @@ func process_command(newCommand):
 			$messageBox.append_bbcode(item + ": " + cycleActionList[item])
 			$messageBox.newline()
 	
+	elif command[0] == "/exec":
+		check_execute(command)
+	
 	elif command[0] == "/help":
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
 		for item in commandList:
 			$messageBox.append_bbcode(item + ": " + commandList[item])
+			$messageBox.newline()
+	
+	elif command[0] == "/inv":
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Inventory: ")
+		for item in userInfo["inventory"]:
+			$messageBox.append_bbcode(item + ": " + str(userInfo["inventory"][item]))
 			$messageBox.newline()
 	
 	elif command[0] == "/listmodes":
@@ -198,6 +246,12 @@ func process_command(newCommand):
 	
 	elif command[0] == "/setmode":
 		set_mode(command)
+	
+	elif command[0] == "/shoplist":
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Items: ")
+		for item in shopItems:
+			$messageBox.append_bbcode(item + ": " + str(shopItems[item]))
+			$messageBox.newline()
 	
 	elif command[0] == "/startgame":
 		if not get_tree().get_network_unique_id() == 1:
@@ -215,6 +269,90 @@ func process_command(newCommand):
 		# /w [userAlias] [message]
 		send_whisper(command)
 
+func check_execute(command):
+	# Check for valid item to execute
+	if not shopItems.has(command[1]):
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid item")
+		return
+	
+	var newItem = []
+	newItem.append(command[1])
+	
+	# Check if item has a target
+	if len(command) > 2:
+		newItem.append(command[2])
+	
+	if get_tree().get_network_unique_id() == 1:
+		execute_item(newItem, 1)
+	else:
+		rpc_id(1, "execute_item", newItem, get_tree().get_network_unique_id())
+
+remote func execute_item(item, userID):
+	# Check if user has item in inventory
+	if networkInfo["userList"][connectedList[userID]]["inventory"][item[0]] == 0:
+		server_message(userID, "Unable to execute, inventory empty")
+		return
+	
+	# Check for target
+	if len(item) > 1:
+		if not sharedNetworkInfo["connectedUsers"].has(item[1]):
+			server_message(userID, item[0] + " failed. " + item[1] + " not connected.")
+			return
+	
+	# Remove item from inventory and execute
+	networkInfo["userList"][connectedList[userID]]["inventory"][item[0]] -= 1
+	
+	if item[0] == "hackWallet":
+		server_message(userID, "Attempting to hack the wallet of " + item[1])
+		attempt_hackWallet(item[1], userID)
+	
+	elif item[0] == "fortFirewall":
+		fortify_firewall(userID)
+
+func check_buy(command):
+	var quantity = 1
+
+	# Check that command is complete
+	if len(command) < 2:
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command incomplete, /buy <item> <quantity>')
+		return
+
+	# Check for valid item
+	elif not shopItems.has(command[1]):
+		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Unknown item, type /shoplist for list of items.')
+		return
+	
+	# Check for quantity
+	if len(command) > 2:
+		if typeof(command[2]) != TYPE_INT:
+			update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid item quantity")
+			return
+		else:
+			quantity = command[2]	
+	
+	# Send buy request
+	if get_tree().get_network_unique_id() == 1:
+		buy_item(command[1], quantity, 1)
+	else:
+		rpc_id(1, "buy_item", command[1], quantity, get_tree().get_network_unique_id())
+
+remote func buy_item(item, quantity, userID):
+	var total = shopItems[item] * quantity
+	
+	# Check if user has enough for purchse
+	if networkInfo["userList"][connectedList[userID]]["currentCredits"] < total:
+		server_message(userID, "Insufficient credits for purchase")
+	
+	# Make purshase
+	else:
+		networkInfo["userList"][connectedList[userID]]["currentCredits"] -= total
+		networkInfo["userList"][connectedList[userID]]["inventory"][item] += quantity
+		server_message(userID, "Purchase successful")
+		if userID == 1:
+			update_userInfo(networkInfo["userList"][connectedList[userID]].duplicate())
+		else:
+			rpc_id(1, "update_userInfo", networkInfo["userList"][connectedList[userID]].duplicate())
+
 func add_cycle_action(command):
 	# Checking for valid cycle action
 	if not cycleActionList.has(command[1]):
@@ -227,10 +365,15 @@ func add_cycle_action(command):
 			update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Unknown user: ' + command[2])
 			return
 	
-	# Sending cycle action to the server
-	rpc_id(1, "send_cycle_action", command)
+	# If user, send action to server
+	if get_tree().get_network_unique_id() != 1:
+		rpc_id(1, "set_cycle_action", get_tree().get_network_unique_id(), command)
+	
+	# If server, add action
+	else:
+		set_cycle_action(1, command)
 
-remote func send_cycle_action(command):
+remote func set_cycle_action(senderID, command):
 	# Formatting users cycle action into array, with first element being the action,
 	# and the second being an optional target
 	var formattedAction = []
@@ -238,8 +381,8 @@ remote func send_cycle_action(command):
 	if len(command) > 2:
 		formattedAction.append(command[2])
 	
-	networkInfo["userList"][connectedList[get_tree().get_rpc_sender_id()]]["cycleActions"].append(formattedAction)
-	rpc_id(get_tree().get_rpc_sender_id(), "server_message", "Cycle action added")
+	networkInfo["userList"][connectedList[senderID]]["cycleActions"].append(formattedAction)
+	server_message(senderID, "Cycle action added")
 
 func create_network():
 	# Adjusting popup buttons
@@ -276,9 +419,10 @@ func start_game(startMessage):
 	
 	# creating process order list
 	sharedNetworkInfo["processOrder"].clear()
-	for uname in sharedNetworkInfo["connectedUsers"]:
-		sharedNetworkInfo["processOrder"].append(uname)
+	for userAlias in sharedNetworkInfo["connectedUsers"]:
+		sharedNetworkInfo["processOrder"].append(userAlias)
 	sharedNetworkInfo["processOrder"].shuffle()
+	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 
 func stop_game(stopMessage):
 	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], stopMessage)
@@ -322,12 +466,12 @@ func _process_cycle():
 	
 	# Processing user cycle actions
 	for userAlias in sharedNetworkInfo["processOrder"]:
-		var userID = aliasIDs[userAlias]
+		var userID = aliasToID[userAlias]
 		var uname = connectedList[userID]
 		# Checking if user has added any actions
 		if not networkInfo["userList"][uname]["cycleActions"].empty():
 			# Process action then remove from array
-			process_cycle_action(networkInfo["userList"][uname]["cycleActions"][0], userID)
+			process_action(networkInfo["userList"][uname]["cycleActions"][0], userID)
 			networkInfo["userList"][uname]["cycleActions"].pop_front()
 	
 	# Adjusting process order, putting first user and the end of the array
@@ -337,13 +481,90 @@ func _process_cycle():
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	rpc("refresh_statusBox")
 
-func process_cycle_action(action, userID):
+func process_action(action, userID):
+	# NEED TO CHECK IF ACTION HAS A TARGET, AND IF THAT TARGET IS STILL CONNECTED FIRST
+	if len(action) > 1:
+		# Action has a target, checking if alias still connected
+		if not sharedNetworkInfo["connectedUsers"].has(action[1]):
+			server_message(userID, action[0] + " failed. " + action[1] + " not connected.")
+			return
+
 	if action[0] == "hackWallet":
-		rpc_id(userID, "server_message", "Attempting to hack the wallet of " + action[1])
+		server_message(userID, "Attempting to hack the wallet of " + action[1])
 		attempt_hackWallet(action[1], userID)
+	
+	elif action[0] == "fortFirewall":
+		fortify_firewall(userID)
+
+func fortify_firewall(userID):
+	# If current firewall level is less than max level, increase by 1
+	if networkInfo["userList"][connectedList[userID]]["firewallLevel"] < networkInfo["maxFirewallLevel"]:
+		networkInfo["userList"][connectedList[userID]]["firewallLevel"] += 1
+		
+		var curLevel = networkInfo["userList"][connectedList[userID]]["firewallLevel"]
+		server_message(userID, "Firewall level increased to " + str(curLevel))
+		if userID != 1: # Preventing self rpc_id call for server
+			rpc_id(userID, "update_userInfo", networkInfo["userList"][connectedList[userID]].duplicate())
+		else:
+			update_userInfo(networkInfo["userList"][connectedList[userID]].duplicate())
+	
+	else:
+		server_message(userID, "Firewall already at max level")
 
 func attempt_hackWallet(targetAlias, attemptUserID):
-	pass
+	# If attack is successful
+	if attack_outcome(targetAlias, attemptUserID):
+		var defID = aliasToID[targetAlias]
+		
+		# If defender has active firewall
+		if networkInfo["userList"][connectedList[defID]]["firewallLevel"] > 0:
+			server_message(attemptUserID, "Hack was blocked by firewall!")
+			networkInfo["userList"][connectedList[defID]]["firewallLevel"] -= 1
+			server_message(defID, "Firewall blocked a hack attempt, and lost 1 level")
+			if defID != 1: # Preventing self rpc_id call for server
+				rpc_id(defID, "update_userInfo", networkInfo["userList"][connectedList[defID]].duplicate())
+			else:
+				update_userInfo(networkInfo["userList"][connectedList[defID]].duplicate())
+		
+		# No active firewall, attack fully successful
+		else:
+			# Determine how much is stolen, random between 5-15%
+			var hackPct = rng.randf_range(0.05, 0.15)
+			var hackAmount = int(round(networkInfo["userList"][connectedList[defID]]["currentCredits"] * hackPct))
+			
+			# Subtract funds for defender and send message
+			networkInfo["userList"][connectedList[defID]]["currentCredits"] -= hackAmount
+			server_message(defID, "ALERT! Wallet was succesfully hacked for " + str(hackAmount) + " credits!")
+			if defID != 1: # Prevent self rpc_id call for server
+				rpc_id(defID, "update_userInfo", networkInfo["userList"][connectedList[defID]].duplicate())
+			else:
+				update_userInfo(networkInfo["userList"][connectedList[defID]].duplicate())
+			
+			# Add funds for attacker and send message
+			networkInfo["userList"][connectedList[attemptUserID]]["currentCredits"] += hackAmount
+			networkInfo["userList"][connectedList[attemptUserID]]["totalCredits"] += hackAmount
+			server_message(attemptUserID, targetAlias + " succesfully hacked for " + str(hackAmount) + " credits!")
+			if attemptUserID != 1: # Prevent self rpc_id call for server
+				rpc_id(attemptUserID, "update_userInfo", networkInfo["userList"][connectedList[attemptUserID]].duplicate())
+			else:
+				update_userInfo(networkInfo["userList"][connectedList[attemptUserID]].duplicate())
+		
+	# Attack failed
+	else:
+		server_message(attemptUserID, "Failed to hack wallet of " + targetAlias)
+
+func attack_outcome(defAlias, attID):
+	# Return true if an attack is succesful
+	var defID = aliasToID[defAlias]
+	var def = networkInfo["userList"][connectedList[defID]]["defense"]
+	var att = networkInfo["userList"][connectedList[attID]]["attack"]
+	
+	rng.randomize()
+	
+	if rng.randf_range(0, def + att) <= att:
+		return(true)
+	else:
+		return(false)
 
 func connected():
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Connection succesful, attempting login...")
@@ -367,7 +588,14 @@ func add_user(ID, userName, alias):
 	connectedList[ID] = userName
 	sharedNetworkInfo["connectedUsers"][alias] = ID
 	sharedNetworkInfo["processOrder"].append(alias)
-	aliasIDs[ID] = alias
+	aliasToID[alias] = ID
+	IDtoAlais[ID] = alias
+	
+	if ID == 1:
+		update_userInfo(networkInfo["userList"][userName].duplicate())
+	else:
+		rpc_id(ID, "update_userInfo", networkInfo["userList"][userName].duplicate())
+	
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	rpc("refresh_connectedList")
 	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], alias + " connected")
@@ -378,9 +606,11 @@ func add_user(ID, userName, alias):
 func user_left(ID):
 	if get_tree().get_network_unique_id() == 1: # Only run on server
 		if connectedList.has(ID): # If client failed to login, skip
-			var discAlias = aliasIDs[ID]
-			rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], aliasIDs[ID] + " disconnected")
+			var discAlias = IDtoAlais[ID]
+			rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], IDtoAlais[ID] + " disconnected")
 			connectedList.erase(ID) # remove  from connectedList
+			aliasToID.erase(discAlias)
+			IDtoAlais.erase(ID)
 			sharedNetworkInfo["connectedUsers"].erase(discAlias)
 			sharedNetworkInfo["processOrder"].erase(discAlias)
 			rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
@@ -391,6 +621,7 @@ func user_left(ID):
 
 remote func update_sharedNetworkInfo(newInfo):
 	sharedNetworkInfo = newInfo.duplicate()
+	refresh_statusBox()
 
 remotesync func refresh_connectedList():
 	$connectedBox.clear()
@@ -398,7 +629,7 @@ remotesync func refresh_connectedList():
 	for line in current_aliases:
 		$connectedBox.add_item(line)
 
-func update_message(messageType, dateTime, color, name, newText):
+remote func update_message(messageType, dateTime, color, name, newText):
 	var newMessage = "[color=" + color + "]" + name + ": "+"[/color]" + newText + "\n"
 	if prefs["dispTimeStamps"] == false:
 		$messageBox.append_bbcode(newMessage)
@@ -428,7 +659,7 @@ func sync_messages(): # Printing shared and local message in order of time stamp
 	var localIndex = 0
 	var sharedIndex = 0
 	
-	for i in range(totalMessages - 1):
+	for i in range(totalMessages - 0):
 		# At end of local log, only print network
 		if localIndex == len(localLog):
 			simple_update(sharedNetworkInfo["messageLog"][sharedIndex])
@@ -525,6 +756,8 @@ func create_userInfo(userName, password):
 	networkInfo["userList"][userName]["processMode"] = "balanced"
 	networkInfo["userList"][userName]["cycleActions"] = []
 	networkInfo["userList"][userName]["activeCycles"] = 0
+	networkInfo["userList"][userName]["firewallLevel"] = 0
+	networkInfo["userList"][userName]["inventory"] = emptyInventory.duplicate()
 
 remote func update_userInfo(newUserInfo):
 	userInfo = newUserInfo.duplicate()
@@ -532,15 +765,19 @@ remote func update_userInfo(newUserInfo):
 
 remote func refresh_statusBox():
 	# Formatting process order
-	var totalUsers = len(sharedNetworkInfo["processOrder"])
-	var userPlace = sharedNetworkInfo["processOrder"].find(prefs["userAlias"])
-	var procPlace = str(userPlace) + "/" + str(totalUsers)
+#	var totalUsers = len(sharedNetworkInfo["processOrder"])
+#	var userPlace = sharedNetworkInfo["processOrder"].find(prefs["userAlias"])
+#	var procPlace = str(userPlace + 1) + "/" + str(totalUsers)
 	
 	$statusBox.clear()
 	$statusBox.add_item("User name: " + userInfo["userName"])
 	$statusBox.add_item("Alias: " + prefs["userAlias"])
 	$statusBox.add_item("Process Mode: " + userInfo["processMode"])
-	$statusBox.add_item("Process Order: " + procPlace)
+	$statusBox.add_item("Firewall Level: " + str(userInfo["firewallLevel"]))
+	# Process order turned off because it was not working for the server
+	# clients seemed to display correctly, but the server would duplicate
+	# a random clients process place
+	#$statusBox.add_item("Process Order: " + procPlace)
 	$statusBox.add_item("Credits: " + str(userInfo["currentCredits"]))
 	$statusBox.add_item("Credit mult: " + str(userInfo["creditMult"]))
 	$statusBox.add_item("Attack: " + str(userInfo["attack"]))
@@ -556,6 +793,7 @@ func check_network(networkName): # Check if save already exists before overwriti
 	else:
 		save_network()
 		save_localLog()
+		create_userInfo(prefs["userName"], networkInfo["netpass"])
 		create_network()
 
 func load_localLog():
@@ -663,8 +901,11 @@ remote func login_fail(message):
 	filePopup.set_item_disabled(3, true)
 	editPopup.set_item_disabled(0, false)
 
-remote func server_message(message):
-	update_message("local", OS.get_datetime(), "silver", "SERVER", message)
+remote func server_message(targetID, message):
+	if targetID == 1:
+		update_message("local", OS.get_datetime(), "silver", "SERVER", message)
+	else:
+		rpc_id(targetID, "update_message", "local", OS.get_datetime(), "silver", "SERVER", message)
 
 func get_formatted_time(dateTime):
 	var hour = str(dateTime["hour"])
@@ -737,9 +978,11 @@ remote func update_alias(alias, oldAlias, ID):
 	if get_tree().get_network_unique_id() == 1: # Only run on server
 		var newAlias = check_alias(alias, ID)
 		sharedNetworkInfo["connectedUsers"].erase(oldAlias)
-		aliasIDs.erase(oldAlias)
+		aliasToID.erase(oldAlias)
+		IDtoAlais.erase(ID)
 		sharedNetworkInfo["connectedUsers"][newAlias] = ID
-		aliasIDs[newAlias] = ID
+		aliasToID[newAlias] = ID
+		IDtoAlais[ID] = newAlias
 		if ID != 1:
 			rpc_id(ID, "client_update_alias", newAlias)
 		rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())

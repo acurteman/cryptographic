@@ -8,7 +8,7 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 
 *Note: Variable names are written in camel case, example: exampleVariableName*
 
-### aliasIDs: Dictionary
+### aliasToID: Dictionary
 
 - Dictionary of connected users, keys are user aliases, values are network IDs
 
@@ -18,29 +18,51 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 
 - Commands:
 
-    - "/changealias": "< newalias > Change your current alias"
+	- "/buy": "< item name> < quanitity> Purchase an item",
 	
-    - "/changecolor": "< newcolor > Change your current color"
+    - "/changealias": "< newalias> Change your current alias",
 	
-    - "/changepass": "< newpassword > Change your current password"
+    - "/changecolor": "< newcolor> Change your current color",
 	
-    - "/help": "Show list of commands"
+    - "/changepass": "< newpassword> Change your current password",
 	
-    - "/listmodes": "Show a list of process modes"
+    - "/cycle": "< action> < target> Set your action for the current cycle, with optional target user",
 	
-    - "/resetpass": "Reset your password to the default network password"
+    - "/cyclelist": "Show a list of available cycle actions",
 	
-    - "/setmode": "< mode > Set your current process mode"
+    - "/exec": "< item> < target> Execute a purchased item",
 	
-    - "/startgame": "SERVER ONLY, forces the game to start"
-    
-    - "/stopgame": "SERVER ONLY, forces the game to stop
+    - "/help": "Show list of commands",
 	
-    - "/w": "< username > < message > Send whisper to another user"
+    - "/inv": "Show current inventory"
+
+    - "/listmodes": "Show a list of process modes",
+	
+    - "/resetpass": "Reset your password to the default network password",
+	
+    - "/setmode": "< mode> Set your current process mode",
+	
+    - "/shoplist": "Show a list of items to buy",
+	
+    - "/startgame": "SERVER ONLY, forces the game to start",
+	
+    - "/stopgame": "SERVER ONLY, forces the game to stop",
+	
+    - "/w": "< username> < message> Send whisper to another user"}
 
 ### connectedList: Dictionary
 
 - Dictionary of connected users, keys are user network ID's, values are usernames
+
+### cycleActionList: Dictionary
+
+- Contains all the actions that can be performed by the /cycle command. Keys are actions, and values are action descriptions
+
+- Dictionary contents:
+
+    - "hackWallet": "Attempt to steal credits from another users wallet"
+
+    - "fortFirewall": "Fortify your firewall, which will prevent one succesfull attack"
 
 ### cycleTimer: Timer
 
@@ -49,6 +71,10 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 ### editPopup: Popup
 
 - Variable used to create the Edit dropdown menu
+
+### emptyInventory: Dictionary
+
+- Variable used to create new inventory for user. Contains a dictionary with keys for every item, and values of 0 representing no items in inventory
 
 ### filePopup: Popup
 
@@ -75,29 +101,31 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 
 - Dictionary contents:
 
-    - "networkName": String, name of the network
+    - "autosaveInterval": Int, duration between autosaves
+
+    - "baseCredits": Int, the number of credits the network will generate each cycle, which is then multiplied by the number of connected users
+
+    - "cycleDuration": Int, how many seconds between each game cycle
+
+    - "gameRunning": Bool, true if game is currently running
+
+    - "maxFirewallLevel": Int, maximum level for users firewalls
 
     - "messageLog": Array, contains all network messages in array format
 
         - message format: [dateTime, "message string"]
 
-    - "autosaveInterval": Int, duration between autosaves
+    - "minUsers": Int, minimum number of users that need to be connected for the game to start
 
     - "netSavePath": String, file path for network save file
 
-    - "netPort": Int, port used to listen
-
     - "netPass": String, password required to join network
 
+    - "netPort": Int, port used to listen
+
+    - "networkName": String, name of the network
+
     - "userList": Dictionary, contains all userInfo dictionaries for users who have joine the network. Keys are usernames, values are userInfo dicts
-
-    - "minUsers": Int, minimum number of users that need to be connected for the game to start
-
-    - "gameRunning": Bool, true if game is currently running
-
-    - "cycleDuration": Int, how many seconds between each game cycle
-
-    - "baseCredits": Int, the number of credits the network will generate each cycle, which is then multiplied by the number of connected users
 
 ### prefs: Dictionary
 
@@ -132,6 +160,10 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
         - "defense": Users defense stat recieves a .3 incrase
 
         - "creditMult": Users credit multiplier stat recieves a .3 increase
+
+### rng: Random Number Generator
+
+- Used to create pseudo random numbers as needed in various functions
 
 ### saveTimer: Timer
 
@@ -172,6 +204,16 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
         - Each action in the array, is itself an array. The first element being the type of action, and the second is the optional target of the action
 
     - "defense": Float, users defense rating
+
+    - "firewallLevel": Int, current level of users firewall. 0 being no firewall.
+
+    - "inventory": Dictionary, keys are item names, values are number of items owned by user
+
+        - Inventory keys:
+
+            - fortFirewall
+
+            - hackWallet
 
     - "processMode": String, the current process mode for the user. 
 
