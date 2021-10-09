@@ -4,6 +4,36 @@
 
 IdleChat is a multiplayer idle game, where users compete to get the most credits using technical know-how and subterfuge
 
+## External Script Format
+
+External scripts should be formatted in .csv files. The first line should contain required metadata. Each following line should be script commands.
+
+- Metadata requirements:
+
+    - New script bool: Contains true if the script has been updated and needs to be loaded. After loading, will be changed to false
+
+    - Run mode string: Sets how frequently script will be executed. Run mode options:
+
+        - "single": Script will be run once
+
+        - "interval": Script will be executed repeatedly after given duration
+
+        - "cycle": Script will be executed once at the start of each cycle
+    
+    - Interval float: Used to set the duration if run mode is interval. Default to 1.0
+
+    - Example script:
+
+    > true,interval,1.0
+    >
+    > cycle,fortFirewall
+    >
+    > buy,hackWallet
+    >
+    > exec,hackWallet,targetAlias
+
+
+
 ## Variables
 
 *Note: Variable names are written in camel case, example: exampleVariableName*
@@ -67,6 +97,10 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 ### cycleTimer: Timer
 
 - Variable used to create Timer object that triggers the _process_cycle method
+
+### cycleScript: Bool
+
+- Used to detrmine if user is waiting to execute a script once a new cycle starts. If set to true, the run_script function will be called at the start of the cycle
 
 ### editPopup: Popup
 
@@ -145,7 +179,15 @@ IdleChat is a multiplayer idle game, where users compete to get the most credits
 
     - "dispTimeStamps": Bool, toggles if time stamps are printed with messages
 
-    - "localLogLocation"L: String, file path used to save network local message logs
+    - "localLogLocation": String, file path used to save network local message logs
+
+    - "outputFreq": String, Sets how often the game output is written to file. Available options:
+
+        - "cycle": Output is written once every cycle
+
+        - "interval": Output is written once every given interval
+
+    - "outputInterval": Float, Sets how often output is written to file if the outputFreq is set to "interval"
 
 ### processModes: Dictionary
 

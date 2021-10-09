@@ -8,6 +8,7 @@ var filePopup
 var editPopup
 var saveTimer
 var cycleTimer
+var outputTimer
 var prefs = {
 	"userName": "defaultUser",
 	"userAlias": "defaultAlias",
@@ -15,7 +16,9 @@ var prefs = {
 	"sysColor": "gray",
 	"sysName": "system",
 	"dispTimeStamps": true,
-	"localLogLocation": "user://"}
+	"localLogLocation": "user://",
+	"outputFreq": "cycle",
+	"outputInterval": 1.0}
 var userInfo = {}
 var localLog = []
 var userList = {} # Variable used to save all user data on the network, keys are user names
@@ -66,6 +69,18 @@ var cycleActionList = {
 var shopItems = {
 	"hackWallet": 100,
 	"fortFirewall": 50}
+var scriptCommands = {
+	"buy": "<item name> <quanitity> Purchase an item",
+	"cycle": "<action> Set cycle action",
+	"exec": "<item> <target> Execute a purchased item",
+	"fortFirewall": "Fortify your firewall, which will prevent one succesfull attack",
+	"hackWallet": "Attempt to steal credits from another users wallet",
+	"setMode": "<mode> Set your current process mode"}
+var userScript = []
+var scriptSettings = []
+var scriptIndex = 0
+var cycleScript = false
+var extCycleScript = false
 var emptyInventory = {
 	"hackWallet": 0,
 	"fortFirewall": 0}
@@ -77,6 +92,7 @@ func _ready():
 	load_prefs()
 	rng.randomize()
 	
+	# Connecting network signals to appropriate functions
 	get_tree().connect("connection_failed", self, "connected_fail")
 	get_tree().connect("network_peer_disconnected",self,"user_left")
 	get_tree().connect("connected_to_server",self,"connected")
@@ -94,6 +110,13 @@ func _ready():
 	editPopup = $editButton.get_popup()
 	editPopup.add_item("User Settings")
 	editPopup.connect("id_pressed", self, "_on_edit_item_pressed")
+	
+	$tabs/Script/loopBtn.add_item("None")
+	$tabs/Script/loopBtn.add_item("Every Cycle")
+	#$tabs/Script/loopBtn.add_item("Continuous")
+	
+	$userSettingsPopup/outputButton.add_item("Cycle", 1)
+	$userSettingsPopup/outputButton.add_item("Interval", 2)
 	
 	$hostPopup/saveDir.text = $hostPopup/saveDirPopup.current_path
 
@@ -158,6 +181,11 @@ func _on_userApplyButton_pressed():
 	prefs["dispTimeStamps"] = $userSettingsPopup/timeBtn.pressed
 	prefs["localLogLocation"] = $userSettingsPopup/logLocInput.text
 	prefs["userAlias"] = $userSettingsPopup/aliasInput.text
+	if $userSettingsPopup/outputButton.get_selected_id() == 1:
+		prefs["outputFreq"] = "cycle"
+	elif $userSettingsPopup/outputButton.get_selected_id() == 2:
+		prefs["outputFreq"] = "interval"
+	prefs["outputInterval"] = float($userSettingsPopup/outputInterval.text)
 	save_prefs()
 
 func _on_yesBtn_pressed():
@@ -193,17 +221,21 @@ func _on_logLocPopup_dir_selected(dir):
 func _on_connectedBox_item_activated(index):
 	$inputText.text += $connectedBox.get_item_text(index)
 
+func _on_clearBtn_pressed():
+	$tabs/Script/scriptText.text = ""
+	$tabs/Script/statusBox.clear()
+
 func process_command(newCommand):
 	var command = newCommand.split(" ")
 	if not commandList.has(command[0]):
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
 	
 	elif command[0] == "/buy":
 		check_buy(command)
 	
 	elif command[0] == "/changealias":
 		#change_alias(command)
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently disabled')
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently disabled')
 	
 	elif command[0] == "/changecolor":
 		change_color(command)
@@ -215,31 +247,31 @@ func process_command(newCommand):
 		add_cycle_action(command)
 	
 	elif command[0] == "/cyclelist":
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Actions: ")
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Actions: ")
 		for item in cycleActionList:
-			$messageBox.append_bbcode(item + ": " + cycleActionList[item])
-			$messageBox.newline()
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + cycleActionList[item])
+			$tabs/Messages/messageBox.newline()
 	
 	elif command[0] == "/exec":
 		check_execute(command)
 	
 	elif command[0] == "/help":
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
 		for item in commandList:
-			$messageBox.append_bbcode(item + ": " + commandList[item])
-			$messageBox.newline()
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + commandList[item])
+			$tabs/Messages/messageBox.newline()
 	
 	elif command[0] == "/inv":
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Inventory: ")
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Inventory: ")
 		for item in userInfo["inventory"]:
-			$messageBox.append_bbcode(item + ": " + str(userInfo["inventory"][item]))
-			$messageBox.newline()
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(userInfo["inventory"][item]))
+			$tabs/Messages/messageBox.newline()
 	
 	elif command[0] == "/listmodes":
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Modes: ")
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Modes: ")
 		for mode in processModes:
-			$messageBox.append_bbcode(mode + ": " + processModes[mode])
-			$messageBox.newline()
+			$tabs/Messages/messageBox.append_bbcode(mode + ": " + processModes[mode])
+			$tabs/Messages/messageBox.newline()
 	
 	elif command[0] == "/resetpass":
 		reset_password(command)
@@ -248,10 +280,10 @@ func process_command(newCommand):
 		set_mode(command)
 	
 	elif command[0] == "/shoplist":
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Items: ")
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Items: ")
 		for item in shopItems:
-			$messageBox.append_bbcode(item + ": " + str(shopItems[item]))
-			$messageBox.newline()
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(shopItems[item]))
+			$tabs/Messages/messageBox.newline()
 	
 	elif command[0] == "/startgame":
 		if not get_tree().get_network_unique_id() == 1:
@@ -290,26 +322,28 @@ func check_execute(command):
 remote func execute_item(item, userID):
 	# Check if user has item in inventory
 	if networkInfo["userList"][connectedList[userID]]["inventory"][item[0]] == 0:
-		server_message(userID, "Unable to execute, inventory empty")
+		server_message(userID, "notice", "Unable to execute, inventory empty")
 		return
 	
 	# Check for target
 	if len(item) > 1:
 		if not sharedNetworkInfo["connectedUsers"].has(item[1]):
-			server_message(userID, item[0] + " failed. " + item[1] + " not connected.")
+			server_message(userID, "notice", item[0] + " failed. " + item[1] + " not connected.")
 			return
 	
 	# Remove item from inventory and execute
 	networkInfo["userList"][connectedList[userID]]["inventory"][item[0]] -= 1
 	
 	if item[0] == "hackWallet":
-		server_message(userID, "Attempting to hack the wallet of " + item[1])
+		server_message(userID, "notice", "Attempting to hack the wallet of " + item[1])
 		attempt_hackWallet(item[1], userID)
 	
 	elif item[0] == "fortFirewall":
 		fortify_firewall(userID)
 
 func check_buy(command):
+	# Local function
+	# Expected syntax: /buy <item> <quantity>
 	var quantity = 1
 
 	# Check that command is complete
@@ -337,17 +371,18 @@ func check_buy(command):
 		rpc_id(1, "buy_item", command[1], quantity, get_tree().get_network_unique_id())
 
 remote func buy_item(item, quantity, userID):
+	# Network function
 	var total = shopItems[item] * quantity
 	
 	# Check if user has enough for purchse
 	if networkInfo["userList"][connectedList[userID]]["currentCredits"] < total:
-		server_message(userID, "Insufficient credits for purchase")
+		server_message(userID, "notice", "Insufficient credits for purchase")
 	
 	# Make purshase
 	else:
 		networkInfo["userList"][connectedList[userID]]["currentCredits"] -= total
 		networkInfo["userList"][connectedList[userID]]["inventory"][item] += quantity
-		server_message(userID, "Purchase successful")
+		server_message(userID, "notice", "Purchase successful")
 		if userID == 1:
 			update_userInfo(networkInfo["userList"][connectedList[userID]].duplicate())
 		else:
@@ -382,7 +417,7 @@ remote func set_cycle_action(senderID, command):
 		formattedAction.append(command[2])
 	
 	networkInfo["userList"][connectedList[senderID]]["cycleActions"].append(formattedAction)
-	server_message(senderID, "Cycle action added")
+	server_message(senderID, "notice", "Cycle action added")
 
 func create_network():
 	# Adjusting popup buttons
@@ -406,7 +441,7 @@ func create_network():
 	cycleTimer.connect("timeout", self, "_process_cycle")
 	
 	# Loading network host data
-	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server hosted on port " + str(port))
+	update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server hosted on port " + str(port))
 	add_user(get_tree().get_network_unique_id(), prefs["userName"], prefs["userAlias"])
 	refresh_connectedList()
 	if not networkInfo["userList"].has(prefs["userName"]):
@@ -414,7 +449,7 @@ func create_network():
 	update_userInfo(networkInfo["userList"][prefs["userName"]].duplicate())
 
 func start_game(startMessage):
-	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], startMessage)
+	rpc("send_message", "notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], startMessage)
 	cycleTimer.start()
 	
 	# creating process order list
@@ -425,20 +460,22 @@ func start_game(startMessage):
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 
 func stop_game(stopMessage):
-	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], stopMessage)
+	rpc("send_message", "notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], stopMessage)
 	cycleTimer.stop()
 
 func _process_cycle():
 	# Calculating how many credits to generate
 	var cycleCredits = networkInfo["baseCredits"] * len(connectedList)
 	
-	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Generated " + str(cycleCredits) + " credits this cycle")
+	#rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Generated " + str(cycleCredits) + " credits this cycle")
 	
 	# Giving credits to each connected user and processing user modes
 	for user in connectedList:
 		# Awarding credits
-		networkInfo["userList"][connectedList[user]]["currentCredits"] += cycleCredits * networkInfo["userList"][connectedList[user]]["creditMult"]
-		networkInfo["userList"][connectedList[user]]["totalCredits"] += cycleCredits * networkInfo["userList"][connectedList[user]]["creditMult"]
+		var userCredits = cycleCredits * networkInfo["userList"][connectedList[user]]["creditMult"]
+		networkInfo["userList"][connectedList[user]]["currentCredits"] += userCredits
+		networkInfo["userList"][connectedList[user]]["totalCredits"] += userCredits
+		server_message(user, "sys", "Credit income: " + str(userCredits))
 		
 		# Processing user modes
 		if networkInfo["userList"][connectedList[user]]["processMode"] == "balanced":
@@ -480,47 +517,87 @@ func _process_cycle():
 	sharedNetworkInfo["processOrder"].append(topUser)
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	rpc("refresh_statusBox")
+	
+	# Let users know a new cycle has started
+	rpc("new_cycle")
+
+remotesync func new_cycle():
+# Network function
+# Called by the server every time a new cycle starts
+
+	# If user has output preferences set to cycle, save output
+	if prefs["outputFreq"] == "cycle":
+		save_output()
+
+	# If user has a script set to run on new cycle, run script
+	if cycleScript:
+		run_script()
+	elif extCycleScript:
+		_on_extRunBtn_pressed()
 
 func process_action(action, userID):
-	# NEED TO CHECK IF ACTION HAS A TARGET, AND IF THAT TARGET IS STILL CONNECTED FIRST
-	if len(action) > 1:
-		# Action has a target, checking if alias still connected
-		if not sharedNetworkInfo["connectedUsers"].has(action[1]):
-			server_message(userID, action[0] + " failed. " + action[1] + " not connected.")
-			return
-
-	if action[0] == "hackWallet":
-		server_message(userID, "Attempting to hack the wallet of " + action[1])
-		attempt_hackWallet(action[1], userID)
+	# Network and local function
+	# The action parameter is an array, with first element being the action,
+	# and further elements being action targets or options depending on the action
+	
+	if action[0] == "buy":
+		check_buy(action)
+	
+	elif action[0] == "cycle":
+		add_cycle_action(action)
+	
+	elif action[0] == "exec":
+		check_execute(action)
 	
 	elif action[0] == "fortFirewall":
-		fortify_firewall(userID)
+		if userID != 1:
+			rpc_id(1, "fortify_firewall", userID)
+		else:
+			fortify_firewall(userID)
+	
+	elif action[0] == "hackWallet":
+		server_message(userID, "sys", "Attempting to hack the wallet of " + action[1])
+		if userID != 1:
+			rpc_id(1, "attempt_hackWallet", action[1], userID)
+		else:
+			attempt_hackWallet(action[1], userID)
+	
+	elif action[0] == "setMode":
+		set_mode(action)
 
-func fortify_firewall(userID):
+remote func fortify_firewall(userID):
+	# Network only function
 	# If current firewall level is less than max level, increase by 1
 	if networkInfo["userList"][connectedList[userID]]["firewallLevel"] < networkInfo["maxFirewallLevel"]:
 		networkInfo["userList"][connectedList[userID]]["firewallLevel"] += 1
 		
 		var curLevel = networkInfo["userList"][connectedList[userID]]["firewallLevel"]
-		server_message(userID, "Firewall level increased to " + str(curLevel))
+		server_message(userID, "notice", "Firewall level increased to " + str(curLevel))
 		if userID != 1: # Preventing self rpc_id call for server
 			rpc_id(userID, "update_userInfo", networkInfo["userList"][connectedList[userID]].duplicate())
 		else:
 			update_userInfo(networkInfo["userList"][connectedList[userID]].duplicate())
 	
 	else:
-		server_message(userID, "Firewall already at max level")
+		server_message(userID, "notice", "Firewall already at max level")
 
 func attempt_hackWallet(targetAlias, attemptUserID):
+	# Network only function
+	
+	# Check if target is connected
+	if not sharedNetworkInfo["connectedUsers"].has(targetAlias):
+		server_message(attemptUserID, "sys", "hackWallet failed. " + targetAlias + " not connected.")
+		return
+	
 	# If attack is successful
 	if attack_outcome(targetAlias, attemptUserID):
 		var defID = aliasToID[targetAlias]
 		
 		# If defender has active firewall
 		if networkInfo["userList"][connectedList[defID]]["firewallLevel"] > 0:
-			server_message(attemptUserID, "Hack was blocked by firewall!")
+			server_message(attemptUserID, "sys", "Hack was blocked by firewall!")
 			networkInfo["userList"][connectedList[defID]]["firewallLevel"] -= 1
-			server_message(defID, "Firewall blocked a hack attempt, and lost 1 level")
+			server_message(defID, "sys", "Firewall blocked a hack attempt, and lost 1 level")
 			if defID != 1: # Preventing self rpc_id call for server
 				rpc_id(defID, "update_userInfo", networkInfo["userList"][connectedList[defID]].duplicate())
 			else:
@@ -534,7 +611,7 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 			
 			# Subtract funds for defender and send message
 			networkInfo["userList"][connectedList[defID]]["currentCredits"] -= hackAmount
-			server_message(defID, "ALERT! Wallet was succesfully hacked for " + str(hackAmount) + " credits!")
+			server_message(defID, "sys", "ALERT! Wallet was succesfully hacked for " + str(hackAmount) + " credits!")
 			if defID != 1: # Prevent self rpc_id call for server
 				rpc_id(defID, "update_userInfo", networkInfo["userList"][connectedList[defID]].duplicate())
 			else:
@@ -543,7 +620,7 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 			# Add funds for attacker and send message
 			networkInfo["userList"][connectedList[attemptUserID]]["currentCredits"] += hackAmount
 			networkInfo["userList"][connectedList[attemptUserID]]["totalCredits"] += hackAmount
-			server_message(attemptUserID, targetAlias + " succesfully hacked for " + str(hackAmount) + " credits!")
+			server_message(attemptUserID, "sys", targetAlias + " succesfully hacked for " + str(hackAmount) + " credits!")
 			if attemptUserID != 1: # Prevent self rpc_id call for server
 				rpc_id(attemptUserID, "update_userInfo", networkInfo["userList"][connectedList[attemptUserID]].duplicate())
 			else:
@@ -551,7 +628,7 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 		
 	# Attack failed
 	else:
-		server_message(attemptUserID, "Failed to hack wallet of " + targetAlias)
+		server_message(attemptUserID, "sys", "Failed to hack wallet of " + targetAlias)
 
 func attack_outcome(defAlias, attID):
 	# Return true if an attack is succesful
@@ -579,7 +656,7 @@ func server_disconnected():
 	print("server_disconnected")
 	save_localLog()
 	$connectedBox.clear()
-	$messageBox.clear()
+	$tabs/Messages/messageBox.clear()
 	filePopup.set_item_disabled(3, true)
 	editPopup.set_item_disabled(0, false)
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Server Closed")
@@ -598,7 +675,7 @@ func add_user(ID, userName, alias):
 	
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	rpc("refresh_connectedList")
-	rpc("send_message", "network", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], alias + " connected")
+	rpc("send_message", "notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], alias + " connected")
 	if not networkInfo["gameRunning"]:
 		if len(connectedList) >= networkInfo["minUsers"]:
 			start_game("Sufficient users connected, beginning game")
@@ -631,35 +708,57 @@ remotesync func refresh_connectedList():
 
 remote func update_message(messageType, dateTime, color, name, newText):
 	var newMessage = "[color=" + color + "]" + name + ": "+"[/color]" + newText + "\n"
-	if prefs["dispTimeStamps"] == false:
-		$messageBox.append_bbcode(newMessage)
-	else:
-		$messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+	
+	# Network messages are displayed in the message box, and saved to the network message log
 	if messageType == "network":
 		if get_tree().get_network_unique_id() == 1:
 			networkInfo["messageLog"].append([dateTime, newMessage])
 			sharedNetworkInfo["messageLog"].append([dateTime, newMessage])
 			rset("sharedNetworkInfo", sharedNetworkInfo.duplicate())
+		
+		if prefs["dispTimeStamps"] == false:
+			$tabs/Messages/messageBox.append_bbcode(newMessage)
+		else:
+			$tabs/Messages/messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+	
+	# Local messages are displayed in the message box, and saved to the local message log
 	elif messageType == "local":
 		localLog.append([dateTime, newMessage])
 		save_localLog()
+		if prefs["dispTimeStamps"] == false:
+			$tabs/Messages/messageBox.append_bbcode(newMessage)
+		else:
+			$tabs/Messages/messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+
+	# Notification messages are displayed in the message box and not saved
+	elif messageType == "notice":
+		if prefs["dispTimeStamps"] == false:
+			$tabs/Messages/messageBox.append_bbcode(newMessage)
+		else:
+			$tabs/Messages/messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+
+	# System messages are displayed in the console box, and are not saved
 	elif messageType == "sys":
-		pass
+		if prefs["dispTimeStamps"] == false:
+			$tabs/Console/consoleBox.append_bbcode(newMessage)
+		else:
+			$tabs/Console/consoleBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+
 	else:
 		pass
 
 func simple_update(datedMessage):
 	if prefs["dispTimeStamps"] == false:
-		$messageBox.append_bbcode(datedMessage[1])
+		$tabs/Messages/messageBox.append_bbcode(datedMessage[1])
 	else:
-		$messageBox.append_bbcode(get_formatted_time(datedMessage[0]) + datedMessage[1])
+		$tabs/Messages/messageBox.append_bbcode(get_formatted_time(datedMessage[0]) + datedMessage[1])
 
 func sync_messages(): # Printing shared and local message in order of time stamp
 	var totalMessages = len(sharedNetworkInfo["messageLog"]) + len(localLog)
 	var localIndex = 0
 	var sharedIndex = 0
 	
-	for i in range(totalMessages - 0):
+	for _i in range(totalMessages - 0):
 		# At end of local log, only print network
 		if localIndex == len(localLog):
 			simple_update(sharedNetworkInfo["messageLog"][sharedIndex])
@@ -690,21 +789,26 @@ func disc(): # Disconnect but dont close
 		connectedList.clear()
 		save_localLog()
 		$connectedBox.clear()
-		$messageBox.clear()
+		$tabs/Messages/messageBox.clear()
 		$statusBox.clear()
 		filePopup.set_item_disabled(3, true)
 		editPopup.set_item_disabled(0, false)
+		if prefs["outputFreq"] == "interval":
+			outputTimer.stop()
 	else:
 		get_tree().network_peer = null
+		cycleTimer.stop()
 		saveTimer.stop()
 		save_localLog()
 		save_network()
 		connectedList.clear()
 		$connectedBox.clear()
-		$messageBox.clear()
+		$tabs/Messages/messageBox.clear()
 		$statusBox.clear()
 		filePopup.set_item_disabled(3, true)
 		editPopup.set_item_disabled(0, false)
+		if prefs["outputFreq"] == "interval":
+			outputTimer.stop()
 
 func exit():
 	# If not server host
@@ -720,10 +824,12 @@ func exit():
 		save_network()
 		connectedList.clear()
 		$connectedBox.clear()
-		$messageBox.clear()
+		$tabs/Messages/messageBox.clear()
 		get_tree().quit()
 
 func save_prefs():
+# Local function
+# Saves the current user preferences
 	var prefsPath = "user://preferences.dat"
 	var file = File.new()
 	file.open(prefsPath, File.WRITE)
@@ -731,6 +837,8 @@ func save_prefs():
 	file.close()
 
 func load_prefs():
+# Local function
+# Loads the user preferences from the save file
 	var prefsPath = "user://preferences.dat"
 	var file = File.new()
 	if not file.file_exists(prefsPath):
@@ -890,10 +998,21 @@ func check_alias(alias, senderID):
 		return(newAlias)
 
 remote func login_success():
+# Network function
+# Called by the server when login info is accepted
+	
+	# Loading and syncing server messages
 	load_localLog()
-	$messageBox.clear()
+	$tabs/Messages/messageBox.clear()
 	sync_messages()
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Login succesful")
+	
+	# If output set to interval, starting output timer
+	outputTimer = Timer.new()
+	add_child(outputTimer)
+	outputTimer.connect("timeout", "save_output")
+	outputTimer.wait_time = prefs["outputInterval"]
+	outputTimer.start()
 
 remote func login_fail(message):
 	update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], message)
@@ -901,11 +1020,11 @@ remote func login_fail(message):
 	filePopup.set_item_disabled(3, true)
 	editPopup.set_item_disabled(0, false)
 
-remote func server_message(targetID, message):
+remote func server_message(targetID, messageType, message):
 	if targetID == 1:
-		update_message("local", OS.get_datetime(), "silver", "SERVER", message)
+		update_message(messageType, OS.get_datetime(), "silver", "SERVER", message)
 	else:
-		rpc_id(targetID, "update_message", "local", OS.get_datetime(), "silver", "SERVER", message)
+		rpc_id(targetID, "update_message", messageType, OS.get_datetime(), "silver", "SERVER", message)
 
 func get_formatted_time(dateTime):
 	var hour = str(dateTime["hour"])
@@ -1011,4 +1130,246 @@ remote func update_user_mode(newMode):
 	var sender = connectedList[get_tree().get_rpc_sender_id()]
 	networkInfo["userList"][sender]["processMode"] = newMode
 	rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][sender].duplicate())
+
+func _on_checkBtn_pressed():
+	$tabs/Script/statusBox.clear()
+	check_script()
+
+func check_script():
+# Local function
+# Checks the script written in the scriptBox, making sure only valid
+# commands are written. Udpates the script status accordingly
+	$tabs/Script/scriptText.readonly = true
+	
+	var totalLines = $tabs/Script/scriptText.get_line_count()
+	
+	for i in range(0, totalLines):
+		var line = $tabs/Script/scriptText.get_line(i)
+		var splitLine = line.split(" ")
+		
+		# Skip if line is blank
+		if not splitLine[0] == "":
+			if not scriptCommands.has(splitLine[0]):
+				$tabs/Script/statusBox.clear()
+				$tabs/Script/statusBox.append_bbcode("[color=red]" +
+				"Error on line: " + str(i +1) + "[/color]\n")
+				$tabs/Script/statusBox.append_bbcode("[color=red]" +
+				"Unknown command: " + splitLine[0] + "[/color]\n")
+				$tabs/Script/scriptText.readonly = false
+				return false
+	
+	$tabs/Script/statusBox.clear()
+	$tabs/Script/statusBox.append_bbcode("[color=green]" +
+	"Script check passed[/color]\n")
+	
+	$tabs/Script/scriptText.readonly = false
+	return true
+
+func _on_runBtn_pressed():
+	$tabs/Script/scriptText.readonly = true
+	$tabs/Script/loopBtn.disabled = true
+	$tabs/Script/stopBtn.disabled = false
+	$tabs/Script/runBtn.disabled = true
+	$tabs/Script/extRunBtn.disabled = true
+	$tabs/Script/scriptBrowse.disabled = true
+	
+	# Check if connected to network
+	if get_tree().has_network_peer():
+	
+		# Check for valid script before running
+		if check_script():
+			userScript.clear()
+
+			for i in range(0, $tabs/Script/scriptText.get_line_count()):
+				var line = $tabs/Script/scriptText.get_line(i)
+				userScript.append(line.split(" "))
+		
+			# If loop button set to None
+			if $tabs/Script/loopBtn.get_selected_id() == 0:
+				$tabs/Script/statusBox.append_bbcode("[color=white]" +
+				"Running script[/color]\n")
+				run_script()
+				$tabs/Script/scriptText.readonly = false
+				$tabs/Script/loopBtn.disabled = false
+				$tabs/Script/stopBtn.disabled = true
+				$tabs/Script/runBtn.disabled = false
+			
+			# If loop button set to cycle
+			elif $tabs/Script/loopBtn.get_selected_id() == 1:
+				$tabs/Script/statusBox.append_bbcode("[color=white]" +
+				"Running script every cycle[/color]\n")
+				run_script()
+				cycleScript = true
+	else:
+		# Not connected to network
+		$tabs/Script/statusBox.clear()
+		$tabs/Script/statusBox.append_bbcode("[color=red]" +
+		"Not connected to network[/color]\n")
+
+func run_script():
+	for line in userScript:
+		process_action(line, get_tree().get_network_unique_id())
+
+func _on_stopBtn_pressed():
+	$tabs/Script/scriptText.readonly = false
+	$tabs/Script/loopBtn.disabled = false
+	$tabs/Script/stopBtn.disabled = true
+	$tabs/Script/runBtn.disabled = false
+	$tabs/Script/extRunBtn.disabled = false
+	$tabs/Script/scriptBrowse.disabled = false
+	cycleScript = false
+	$tabs/Script/statusBox.append_bbcode("[color=white]" +
+		"Script stopped[/color]\n")
+
+func _on_scriptDialog_file_selected(path):
+	$tabs/Script/scriptLocation.text = path
+
+func _on_scriptBrowse_pressed():
+	$tabs/Script/scriptDialog.popup()
+
+func _on_extRunBtn_pressed():
+# Local function
+# Handles the loading and executing of external scripts
+	
+	# Disabling local script buttons
+	$tabs/Script/checkBtn.disabled = true
+	$tabs/Script/clearBtn.disabled = true
+	$tabs/Script/loopBtn.disabled = true
+	$tabs/Script/runBtn.disabled = true
+	
+	# If able to load external script
+	if load_ext_script():
+		$tabs/Script/scriptText.readonly = true
+		print_script()
+		
+		# Check if connected to network
+		if get_tree().has_network_peer():
+		
+			# If loaded script is valid, execute
+			if check_script():
+				# If set to single run
+				if scriptSettings[1] == "single":
+					run_script()
+					$tabs/Script/checkBtn.disabled = false
+					$tabs/Script/clearBtn.disabled = false
+					$tabs/Script/loopBtn.disabled = false
+					$tabs/Script/runBtn.disabled = false
+				
+				# If set to run each cycle
+				elif scriptSettings[1] == "cycle":
+					run_script()
+					extCycleScript = true
+				
+				# If set to run after given interval
+				elif scriptSettings[1] == "interval":
+					var scriptTimer = Timer.new()
+					add_child(scriptTimer)
+					scriptTimer.connect("timeout", "_interval_execute")
+					scriptTimer.wait_time = float(scriptSettings[2])
+					scriptTimer.one_shot = true
+					run_script()
+					scriptTimer.start()
+					
+		else:
+			# Not connected to network
+			$tabs/Script/statusBox.clear()
+			$tabs/Script/statusBox.append_bbcode("[color=red]" +
+			"Not connected to network[/color]\n")
+	
+	# Error opening script file
+	else:
+		print("Error opening script file")
+		$tabs/Script/statusBox.clear()
+		$tabs/Script/statusBox.append_bbcode("[color=red]" +
+		"Error opening script file[/color]\n")
+
+func _interval_execute():
+# Local function
+# Called when external script interval timer ends. Restarts the process
+# of executing the exteral script
+	_on_extRunBtn_pressed()
+
+func load_ext_script():
+# Local function
+# Attempts to load a script file. If succesful, sets scriptSettings variable,
+# and loads script into userScript var, then returns true. If script file opens, but has not been
+# changed, simply returns true. If file fails to open, returns false.
+
+	var scriptFile = File.new()
+	var err = scriptFile.open($tabs/Script/scriptLocation.text, File.READ)
+	
+	if err == 0:
+		# Check for new script flag
+		scriptSettings = scriptFile.get_line().split(",")
+		if scriptSettings[0] == "true":
+			userScript.clear()
+			# Append each line to userScript, delimitted by ,
+			while not scriptFile.eof_reached():
+				userScript.append(scriptFile.get_line().split(","))
+			scriptFile.close()
+			scriptSettings[0] = "false"
+			
+			# Rewrite file with new script flag set to false
+			scriptFile.open($tabs/Script/scriptLocation.text, File.WRITE)
+			scriptFile.store_csv_line(scriptSettings)
+			for line in userScript:
+				scriptFile.store_csv_line(line)
+		
+		scriptFile.close()
+		return(true)
+	
+	else:
+		scriptFile.close()
+		return(false)
+
+func print_script():
+# Local function
+# Takes the contents of userScript, and loads them into the scriptText box
+	$tabs/Script/scriptText.text = ""
+	for line in userScript:
+		for i in range(0, len(line)):
+			$tabs/Script/scriptText.text += line[i] + " "
+		$tabs/Script/scriptText.text += "\n"
+
+func save_output():
+# Local function
+# Writes the output file accesible to external scripts. Contains all information about the 
+# current state of the game available to the player.
+	
+	var outputPath = "user://output.dat"
+	var file = File.new()
+	file.open(outputPath, File.WRITE)
+	
+	var userStats : PoolStringArray
+	userStats.append(userInfo["activeCycles"])
+	userStats.append(userInfo["attack"])
+	userStats.append(userInfo["creditMult"])
+	userStats.append(userInfo["currentCredits"])
+	userStats.append(userInfo["defense"])
+	userStats.append(userInfo["firewallLevel"])
+	userStats.append(userInfo["processMode"])
+	userStats.append(userInfo["totalCredits"])
+	var statsHeader = ["activeCycles", "attack", "creditMult", "currentCredits", "defense",
+		"firewallLevel", "processMode", "totalCredits"]
+	
+	# First storing the current userStats, first line is header, second is stat values
+	file.store_csv_line(statsHeader)
+	file.store_csv_line(userStats)
+	
+	# Next, storing current user cycle actions, if empty write "none"
+	if userInfo["cycleActions"].empty():
+		file.store_csv_line(["none"])
+	else:
+		file.store_csv_line(userInfo["cycleActions"])
+	
+	# Next, storing inventory in two lines, first is item names, second is item quantity
+	file.store_csv_line(userInfo["inventory"].keys())
+	file.store_csv_line(userInfo["inventory"].values())
+	
+	# Next storing the current connected player
+	file.store_csv_line(PoolStringArray(sharedNetworkInfo["connectedUsers"].values()))
+	
+	file.close()
+	
+
 

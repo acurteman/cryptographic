@@ -1,22 +1,10 @@
-[gd_scene load_steps=9 format=2]
+[gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
 [ext_resource path="res://Fonts/Roboto-Regular.ttf" type="DynamicFontData" id=2]
-[ext_resource path="res://mainTheme.tres" type="Theme" id=3]
+[ext_resource path="res://Theme/mainTheme.tres" type="Theme" id=3]
 
-[sub_resource type="StyleBoxFlat" id=1]
-bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
-
-[sub_resource type="DynamicFont" id=2]
-font_data = ExtResource( 2 )
-
-[sub_resource type="StyleBoxFlat" id=3]
-bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
-
-[sub_resource type="StyleBoxFlat" id=4]
-bg_color = Color( 0.0588235, 0.0588235, 0.0588235, 1 )
-
-[sub_resource type="DynamicFont" id=5]
+[sub_resource type="DynamicFont" id=1]
 font_data = ExtResource( 2 )
 
 [node name="main" type="Control"]
@@ -31,42 +19,44 @@ __meta__ = {
 anchor_right = 0.996
 anchor_bottom = 1.0
 margin_right = 4.09595
-color = Color( 0.133333, 0.133333, 0.133333, 1 )
+color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="fileButton" type="MenuButton" parent="."]
-margin_left = 10.0
-margin_right = 50.0
-margin_bottom = 30.0
-theme = ExtResource( 3 )
-text = "File"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="editButton" type="MenuButton" parent="."]
-margin_left = 50.0
-margin_right = 100.0
-margin_bottom = 30.0
-theme = ExtResource( 3 )
-text = "Edit"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="messageBox" type="RichTextLabel" parent="."]
+[node name="tabs" type="TabContainer" parent="."]
 anchor_left = 0.01
 anchor_top = 0.05
-anchor_right = 0.732
+anchor_right = 0.723
 anchor_bottom = 0.917
 margin_left = -0.240001
-margin_right = 0.431946
+margin_right = -0.352051
 margin_bottom = -0.200012
+theme = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Messages" type="Tabs" parent="tabs"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 2.0
+margin_top = 25.0
+margin_right = -2.0
+margin_bottom = -2.0
+theme = ExtResource( 3 )
+drag_to_rearrange_enabled = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="messageBox" type="RichTextLabel" parent="tabs/Messages"]
+anchor_right = 1.0
+anchor_bottom = 1.0
 focus_mode = 2
-custom_styles/normal = SubResource( 1 )
-custom_fonts/normal_font = SubResource( 2 )
+size_flags_vertical = 3
+theme = ExtResource( 3 )
+custom_fonts/normal_font = SubResource( 1 )
 bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
@@ -74,45 +64,249 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="connectedBox" type="ItemList" parent="."]
-anchor_left = 0.742
-anchor_top = 0.05
-anchor_right = 0.986
-anchor_bottom = 0.567
-margin_left = 0.191956
-margin_right = 0.335938
-margin_bottom = -0.200012
+[node name="Console" type="Tabs" parent="tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 2.0
+margin_top = 25.0
+margin_right = -2.0
+margin_bottom = -2.0
+
+[node name="consoleBox" type="RichTextLabel" parent="tabs/Console"]
+anchor_right = 1.0
+anchor_bottom = 1.0
 theme = ExtResource( 3 )
-custom_styles/bg = SubResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Script" type="Tabs" parent="tabs"]
+visible = false
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 2.0
+margin_top = 25.0
+margin_right = -2.0
+margin_bottom = -2.0
+
+[node name="scriptText" type="TextEdit" parent="tabs/Script"]
+margin_left = 9.0
+margin_top = 10.0
+margin_right = 469.0
+margin_bottom = 480.0
+theme = ExtResource( 3 )
+show_line_numbers = true
+caret_block_mode = true
+caret_blink = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="clearBtn" type="Button" parent="tabs/Script"]
+margin_left = 650.0
+margin_top = 50.0
+margin_right = 720.0
+margin_bottom = 75.0
+theme = ExtResource( 3 )
+text = "Clear"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="loopBtn" type="OptionButton" parent="tabs/Script"]
+margin_left = 600.0
+margin_top = 10.0
+margin_right = 720.0
+margin_bottom = 35.0
+theme = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="loopLabel" type="Label" parent="tabs/Script"]
+margin_left = 478.0
+margin_top = 15.0
+margin_right = 528.0
+margin_bottom = 35.0
+theme = ExtResource( 3 )
+text = "Loop:"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="checkBtn" type="Button" parent="tabs/Script"]
+margin_left = 570.0
+margin_top = 50.0
+margin_right = 640.0
+margin_bottom = 75.0
+theme = ExtResource( 3 )
+text = "Check"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="statusBox" type="RichTextLabel" parent="tabs/Script"]
+margin_left = 480.0
+margin_top = 350.0
+margin_right = 720.0
+margin_bottom = 480.0
+theme = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="runBtn" type="Button" parent="tabs/Script"]
+margin_left = 570.0
+margin_top = 90.0
+margin_right = 630.0
+margin_bottom = 115.0
+theme = ExtResource( 3 )
+text = "Run"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="stopBtn" type="Button" parent="tabs/Script"]
+margin_left = 650.0
+margin_top = 90.0
+margin_right = 710.0
+margin_bottom = 115.0
+theme = ExtResource( 3 )
+disabled = true
+text = "Stop"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="externalLabel" type="Label" parent="tabs/Script"]
+margin_left = 478.0
+margin_top = 145.0
+margin_right = 584.0
+margin_bottom = 164.0
+text = "External Script:"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="scriptLocation" type="LineEdit" parent="tabs/Script"]
+margin_left = 478.0
+margin_top = 165.0
+margin_right = 718.0
+margin_bottom = 190.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="scriptBrowse" type="Button" parent="tabs/Script"]
+margin_left = 638.0
+margin_top = 195.0
+margin_right = 716.0
+margin_bottom = 218.0
+text = "Browse"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="scriptDialog" type="FileDialog" parent="tabs/Script"]
+margin_left = 208.0
+margin_top = 75.0
+margin_right = 678.0
+margin_bottom = 395.0
+window_title = "Open a File"
+mode = 0
+access = 2
+filters = PoolStringArray( ".csv" )
+current_dir = "/home/alex/Godot/IdleChat"
+current_file = "defaultScript.csv"
+current_path = "/home/alex/Godot/IdleChat/defaultScript.csv"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="extRunBtn" type="Button" parent="tabs/Script"]
+margin_left = 478.0
+margin_top = 195.0
+margin_right = 548.0
+margin_bottom = 218.0
+text = "Run"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="extStopBtn" type="Button" parent="tabs/Script"]
+margin_left = 558.0
+margin_top = 195.0
+margin_right = 618.0
+margin_bottom = 220.0
+disabled = true
+text = "Stop"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="connectedBox" type="ItemList" parent="."]
+anchor_left = 0.732
+anchor_top = 0.083
+anchor_right = 1.0
+anchor_bottom = 0.55
+margin_left = 0.431946
+margin_top = 0.199997
+margin_right = -14.0
+theme = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="statusBox" type="ItemList" parent="."]
-anchor_left = 0.742
-anchor_top = 0.6
-anchor_right = 0.986
+anchor_left = 0.732
+anchor_top = 0.567
+anchor_right = 1.0
 anchor_bottom = 0.983
-margin_left = 0.191956
-margin_right = 0.335938
+margin_left = 0.431946
+margin_top = -0.200012
+margin_right = -11.0
 margin_bottom = 0.199951
 theme = ExtResource( 3 )
-custom_styles/bg = SubResource( 4 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="inputText" type="LineEdit" parent="."]
 anchor_left = 0.01
-anchor_top = 0.933
-anchor_right = 0.732
-anchor_bottom = 0.933
+anchor_top = 0.935
+anchor_right = 0.723
+anchor_bottom = 0.983
 margin_left = -0.240001
-margin_top = 0.200012
-margin_right = 0.431946
-margin_bottom = 29.2
-custom_fonts/font = SubResource( 5 )
+margin_top = -6.10352e-05
+margin_right = -0.352051
+margin_bottom = 0.199951
+theme = ExtResource( 3 )
 max_length = 255
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="fileButton" type="MenuButton" parent="."]
+anchor_left = 0.01
+anchor_right = 0.049
+anchor_bottom = 0.05
+margin_left = -0.240001
+margin_right = -0.176003
+theme = ExtResource( 3 )
+text = "File"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="editButton" type="MenuButton" parent="."]
+anchor_left = 0.049
+anchor_right = 0.098
+anchor_bottom = 0.05
+margin_left = -0.176003
+margin_right = -0.352005
+theme = ExtResource( 3 )
+text = "Edit"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -129,7 +323,7 @@ __meta__ = {
 [node name="ColorRect" type="ColorRect" parent="joinPopup"]
 margin_right = 260.0
 margin_bottom = 280.0
-color = Color( 0.176471, 0.176471, 0.176471, 1 )
+color = Color( 0.133333, 0.156863, 0.192157, 1 )
 
 [node name="portLabel" type="Label" parent="joinPopup"]
 margin_left = 10.0
@@ -215,7 +409,7 @@ __meta__ = {
 [node name="ColorRect" type="ColorRect" parent="hostPopup"]
 margin_right = 320.0
 margin_bottom = 300.0
-color = Color( 0.176471, 0.176471, 0.176471, 1 )
+color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -331,7 +525,7 @@ __meta__ = {
 [node name="ColorRect" type="ColorRect" parent="overwriteSave"]
 margin_right = 250.0
 margin_bottom = 100.0
-color = Color( 0.176471, 0.176471, 0.176471, 1 )
+color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -367,27 +561,35 @@ __meta__ = {
 }
 
 [node name="userSettingsPopup" type="Popup" parent="."]
-margin_left = 290.0
-margin_top = 130.0
-margin_right = 590.0
-margin_bottom = 440.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+visible = true
+anchor_left = 0.283
+anchor_top = 0.217
+anchor_right = 0.586
+anchor_bottom = 0.817
+margin_left = 0.207977
+margin_top = -0.200012
+margin_right = -0.0640259
+margin_bottom = -0.200012
+theme = ExtResource( 3 )
 
 [node name="ColorRect" type="ColorRect" parent="userSettingsPopup"]
-margin_right = 300.0
-margin_bottom = 310.0
-color = Color( 0.176471, 0.176471, 0.176471, 1 )
+show_behind_parent = true
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="usernameLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 10.0
-margin_right = 100.0
-margin_bottom = 40.0
+anchor_left = 0.025
+anchor_top = 0.032
+anchor_right = 0.29
+anchor_bottom = 0.086
+margin_left = 0.25
+margin_top = 0.48
+margin_right = 1.09999
+margin_bottom = 0.039999
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
 text = "User name: "
@@ -397,10 +599,14 @@ __meta__ = {
 }
 
 [node name="userColorLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 110.0
-margin_right = 150.0
-margin_bottom = 130.0
+anchor_left = 0.032
+anchor_top = 0.222
+anchor_right = 0.484
+anchor_bottom = 0.278
+margin_left = 0.0799999
+margin_top = 0.0799942
+margin_right = -0.0400085
+margin_bottom = -0.0800095
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
 text = "User BBCode Color: "
@@ -410,20 +616,28 @@ __meta__ = {
 }
 
 [node name="usernameInput" type="LineEdit" parent="userSettingsPopup"]
-margin_left = 100.0
-margin_top = 10.0
-margin_right = 290.0
-margin_bottom = 40.0
+anchor_left = 0.548
+anchor_top = 0.032
+anchor_right = 0.977
+anchor_bottom = 0.103
+margin_left = 0.119995
+margin_top = 0.48
+margin_right = 0.130005
+margin_bottom = -0.0800018
 focus_next = NodePath("../aliasInput")
 theme = ExtResource( 3 )
 text = "defaultUser"
 align = 2
 
 [node name="userApplyButton" type="Button" parent="userSettingsPopup"]
-margin_left = 120.0
-margin_top = 280.0
-margin_right = 180.0
-margin_bottom = 305.0
+anchor_left = 0.387
+anchor_top = 0.889
+anchor_right = 0.587
+anchor_bottom = 0.986
+margin_left = 0.0299911
+margin_top = -0.0400085
+margin_right = 0.0299988
+margin_bottom = -0.160034
 focus_next = NodePath("../usernameInput")
 theme = ExtResource( 3 )
 text = "Apply"
@@ -432,10 +646,13 @@ __meta__ = {
 }
 
 [node name="userColor" type="LineEdit" parent="userSettingsPopup"]
-margin_left = 160.0
-margin_top = 100.0
-margin_right = 290.0
-margin_bottom = 129.0
+anchor_left = 0.71
+anchor_top = 0.25
+anchor_right = 0.977
+anchor_bottom = 0.319
+margin_left = -0.100006
+margin_right = 3.13
+margin_bottom = 0.159996
 focus_next = NodePath("../userApplyButton")
 theme = ExtResource( 3 )
 text = "red"
@@ -443,48 +660,72 @@ align = 2
 max_length = 20
 
 [node name="timeLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 150.0
-margin_right = 160.0
-margin_bottom = 170.0
+anchor_left = 0.032
+anchor_top = 0.333
+anchor_right = 0.513
+anchor_bottom = 0.389
+margin_left = 0.0799999
+margin_top = 0.119995
+margin_right = -0.0299988
+margin_bottom = -0.0400085
 theme = ExtResource( 3 )
 text = "Display time stamps:"
 
 [node name="timeBtn" type="CheckButton" parent="userSettingsPopup"]
-margin_left = 210.0
-margin_top = 140.0
-margin_right = 286.0
-margin_bottom = 180.0
+anchor_left = 0.742
+anchor_top = 0.333
+anchor_right = 0.961
+anchor_bottom = 0.433
+margin_left = -0.0200195
+margin_top = 0.119995
+margin_right = 0.0899963
+margin_bottom = 0.119995
+theme = ExtResource( 3 )
 pressed = true
 
 [node name="logLocLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 190.0
-margin_right = 200.0
-margin_bottom = 210.0
+anchor_left = 0.032
+anchor_top = 0.694
+anchor_right = 0.632
+anchor_bottom = 0.759
+margin_left = 0.0800056
+margin_top = 0.159973
+margin_right = 0.0799866
+margin_bottom = -0.0400391
 theme = ExtResource( 3 )
 text = "Network log save location:"
 
 [node name="logLocInput" type="LineEdit" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 210.0
-margin_right = 290.0
-margin_bottom = 240.0
+anchor_left = 0.032
+anchor_top = 0.778
+anchor_right = 0.709
+anchor_bottom = 0.858
+margin_left = 0.0800056
+margin_top = -0.0800476
+margin_right = -0.0430145
+margin_bottom = 0.169952
 theme = ExtResource( 3 )
 
 [node name="logLocBrowseBtn" type="Button" parent="userSettingsPopup"]
-margin_left = 220.0
-margin_top = 250.0
-margin_right = 290.0
-margin_bottom = 275.0
+anchor_left = 0.742
+anchor_top = 0.778
+anchor_right = 0.968
+anchor_bottom = 0.852
+margin_left = -0.02005
+margin_top = -0.0800476
+margin_right = -2.48203
+margin_bottom = 0.0299072
 theme = ExtResource( 3 )
 text = "Browse"
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="logLocPopup" type="FileDialog" parent="userSettingsPopup"]
-margin_left = -90.0
-margin_top = -10.0
-margin_right = 410.0
-margin_bottom = 340.0
+margin_left = 3.0
+margin_top = 3.0
+margin_right = 396.0
+margin_bottom = 310.0
 window_title = "Network Save Directory"
 mode_overrides_title = false
 mode = 2
@@ -493,22 +734,66 @@ current_dir = "/home/alex/Godot/IdleChat"
 current_path = "/home/alex/Godot/IdleChat/"
 
 [node name="aliasLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 60.0
-margin_right = 50.0
-margin_bottom = 90.0
+anchor_left = 0.032
+anchor_top = 0.139
+anchor_right = 0.171
+anchor_bottom = 0.194
+margin_left = 0.0799999
+margin_top = -0.0400047
+margin_right = -0.0100021
+margin_bottom = 0.159996
 theme = ExtResource( 3 )
 text = "Alias: "
 valign = 1
 
 [node name="aliasInput" type="LineEdit" parent="userSettingsPopup"]
-margin_left = 100.0
-margin_top = 60.0
-margin_right = 290.0
-margin_bottom = 84.0
+anchor_left = 0.613
+anchor_top = 0.139
+anchor_right = 0.977
+anchor_bottom = 0.208
+margin_left = -0.030014
+margin_top = -0.0400047
+margin_right = 4.13
+margin_bottom = 0.119995
 focus_next = NodePath("../userColor")
 theme = ExtResource( 3 )
 text = "defaultAlias"
+align = 2
+
+[node name="outputLabel" type="Label" parent="userSettingsPopup"]
+anchor_left = 0.032
+anchor_top = 0.472
+anchor_right = 0.452
+anchor_bottom = 0.536
+margin_left = 0.0799999
+margin_top = 0.0799866
+margin_right = -1.12001
+margin_bottom = 0.0899811
+text = "Output Frequency:"
+
+[node name="outputButton" type="OptionButton" parent="userSettingsPopup"]
+margin_left = 180.0
+margin_top = 170.0
+margin_right = 300.0
+margin_bottom = 193.0
+
+[node name="outputDurLabel" type="Label" parent="userSettingsPopup"]
+margin_left = 10.0
+margin_top = 210.0
+margin_right = 183.0
+margin_bottom = 229.0
+text = "Output Interval Duration:"
+
+[node name="outputInterval" type="LineEdit" parent="userSettingsPopup"]
+anchor_left = 0.774
+anchor_top = 0.583
+anchor_right = 0.968
+anchor_bottom = 0.653
+margin_left = 0.0599823
+margin_top = 0.119995
+margin_right = -0.0800171
+margin_bottom = -0.0800171
+text = "1.0"
 align = 2
 
 [node name="loadPopup" type="FileDialog" parent="."]
@@ -529,6 +814,13 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[connection signal="pressed" from="tabs/Script/clearBtn" to="." method="_on_clearBtn_pressed"]
+[connection signal="pressed" from="tabs/Script/checkBtn" to="." method="_on_checkBtn_pressed"]
+[connection signal="pressed" from="tabs/Script/runBtn" to="." method="_on_runBtn_pressed"]
+[connection signal="pressed" from="tabs/Script/stopBtn" to="." method="_on_stopBtn_pressed"]
+[connection signal="pressed" from="tabs/Script/scriptBrowse" to="." method="_on_scriptBrowse_pressed"]
+[connection signal="file_selected" from="tabs/Script/scriptDialog" to="." method="_on_scriptDialog_file_selected"]
+[connection signal="pressed" from="tabs/Script/extRunBtn" to="." method="_on_extRunBtn_pressed"]
 [connection signal="item_activated" from="connectedBox" to="." method="_on_connectedBox_item_activated"]
 [connection signal="text_entered" from="inputText" to="." method="_on_inputText_text_entered"]
 [connection signal="pressed" from="joinPopup/joinButton" to="." method="_on_joinButton_pressed"]
