@@ -151,26 +151,24 @@ func add_user(ID, userName, alias):
 # and sends info to other connected users. If minimum players reached to start
 # game, the game is started.
 
-	# Only run on server
-	if get_tree().is_network_server():
-		if dedicated:
-			print(userName + " connected")
-		connectedList[ID] = userName
-		sharedNetworkInfo["connectedUsers"][alias] = ID
-		sharedNetworkInfo["userMaxCreds"][alias] = networkInfo["userList"][userName]["maxCredits"]
-		sharedNetworkInfo["processOrder"].append(alias)
-		aliasToID[alias] = ID
-		IDtoAlais[ID] = alias
-		
-		rpc_id(ID, "update_userInfo", networkInfo["userList"][userName].duplicate())
-		
-		rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
-		rpc("refresh_connectedList")
-		rpc("send_message", "notice", OS.get_datetime(), "silver", "SERVER", alias + " connected")
-		if not networkInfo["gameRunning"]:
-			if len(connectedList) >= networkInfo["minUsers"]:
-				if not networkInfo["gameRunning"]:
-					start_game("Sufficient users connected, beginning game")
+	if dedicated:
+		print(userName + " connected")
+	connectedList[ID] = userName
+	sharedNetworkInfo["connectedUsers"][alias] = ID
+	sharedNetworkInfo["userMaxCreds"][alias] = networkInfo["userList"][userName]["maxCredits"]
+	sharedNetworkInfo["processOrder"].append(alias)
+	aliasToID[alias] = ID
+	IDtoAlais[ID] = alias
+	
+	rpc_id(ID, "update_userInfo", networkInfo["userList"][userName].duplicate())
+	
+	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
+	rpc("refresh_connectedList")
+	rpc("send_message", "notice", OS.get_datetime(), "silver", "SERVER", alias + " connected")
+	if not networkInfo["gameRunning"]:
+		if len(connectedList) >= networkInfo["minUsers"]:
+			if not networkInfo["gameRunning"]:
+				start_game("Sufficient users connected, beginning game")
 
 func attack_outcome(defAlias, attID, attackType):
 # Calculates whether an attack is succesfull based on users attack
@@ -475,9 +473,9 @@ remote func net_login(userName, password, alias):
 		elif networkInfo["userList"].has(userName): 
 			# Login success for returning user
 			if networkInfo["userList"][userName]["userPass"] == password:
+				rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 				rpc_id(get_tree().get_rpc_sender_id(), "update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 				rpc_id(get_tree().get_rpc_sender_id(), "login_success")
-				rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", networkInfo["userList"][userName].duplicate())
 				add_user(senderID, userName, check_alias(alias, senderID))
 			else:
 				# Returning user used incorrect password
@@ -523,12 +521,26 @@ func process_action_server(action, userID):
 	elif action[0] == "traceRoute":
 		init_traceRoute(userID)
 
+remote func reset_password(command):
+# This needed to be rewritten, so I just scrapped it. It was bad.
+# This function should reset the password of a target user. Should only be allowed
+# by users with admin rights. Need to make an admin list first
+	pass
+
 func save_network():
 	#print("saving network file at: " + networkInfo["netSavePath"])
 	var file = File.new()
 	file.open(networkInfo["netSavePath"], File.WRITE)
 	file.store_var(networkInfo)
 	file.close()
+
+remotesync func send_message(messageType, curTime, color, name, newText):
+# Used as the main method of sending messages to other users
+
+	# Server version simply logs messages
+	var newMessage = "[color=" + color + "]" + name + ": "+"[/color]" + newText + "\n"
+	networkInfo["messageLog"].append([curTime, newMessage])
+	sharedNetworkInfo["messageLog"].append([curTime, newMessage])
 
 func server_message(targetID, messageType, message):
 # Server function
@@ -584,6 +596,20 @@ func stop_game(stopMessage):
 	
 	if dedicated:
 		print("Game stopped")
+
+remote func update_alias(alias, oldAlias, ID):
+# Currently disabled command, allowed user to change alias during game
+# Need to make item to handle instead, so user can't change alias for free
+	var newAlias = check_alias(alias, ID)
+	sharedNetworkInfo["connectedUsers"].erase(oldAlias)
+	aliasToID.erase(oldAlias)
+	IDtoAlais.erase(ID)
+	sharedNetworkInfo["connectedUsers"][newAlias] = ID
+	aliasToID[newAlias] = ID
+	IDtoAlais[ID] = newAlias
+	rpc_id(ID, "client_update_alias", newAlias)
+	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
+	rpc("refresh_connectedList")
 
 remote func update_user_mode(newMode):
 # Changes to users cycle mode

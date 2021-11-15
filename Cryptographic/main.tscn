@@ -316,72 +316,38 @@ __meta__ = {
 }
 
 [node name="joinPopup" type="Popup" parent="."]
+visible = true
 margin_left = 290.0
 margin_top = 130.0
 margin_right = 550.0
-margin_bottom = 410.0
+margin_bottom = 296.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="ColorRect" type="ColorRect" parent="joinPopup"]
 margin_right = 260.0
-margin_bottom = 280.0
+margin_bottom = 166.0
 color = Color( 0.133333, 0.156863, 0.192157, 1 )
 
-[node name="portLabel" type="Label" parent="joinPopup"]
-margin_left = 10.0
-margin_top = 50.0
-margin_right = 47.0
-margin_bottom = 75.0
-rect_pivot_offset = Vector2( 1, 12.5 )
-theme = ExtResource( 3 )
-text = "Port: "
-valign = 1
-
-[node name="portInput" type="LineEdit" parent="joinPopup"]
-margin_left = 190.0
-margin_top = 50.0
-margin_right = 248.0
-margin_bottom = 79.0
-theme = ExtResource( 3 )
-text = "42420"
-max_length = 6
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ipLabel" type="Label" parent="joinPopup"]
+[node name="serverLabel" type="Label" parent="joinPopup"]
 margin_left = 10.0
 margin_top = 10.0
 margin_right = 45.0
 margin_bottom = 35.0
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
-text = "IP: "
+text = "Server: "
 valign = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ipInput" type="LineEdit" parent="joinPopup"]
-margin_left = 110.0
-margin_top = 10.0
-margin_right = 250.0
-margin_bottom = 39.0
-theme = ExtResource( 3 )
-text = "35.230.50.147"
-align = 2
-max_length = 15
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="joinButton" type="Button" parent="joinPopup"]
 margin_left = 110.0
-margin_top = 240.0
+margin_top = 126.0
 margin_right = 153.0
-margin_bottom = 265.0
+margin_bottom = 151.0
 theme = ExtResource( 3 )
 text = "Join"
 __meta__ = {
@@ -389,20 +355,32 @@ __meta__ = {
 }
 
 [node name="passLabel" type="Label" parent="joinPopup"]
-margin_left = 10.0
-margin_top = 90.0
-margin_right = 88.0
-margin_bottom = 109.0
+margin_left = 14.0
+margin_top = 54.0
+margin_right = 92.0
+margin_bottom = 73.0
 theme = ExtResource( 3 )
 text = "Password: "
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="passInput" type="LineEdit" parent="joinPopup"]
-margin_left = 10.0
-margin_top = 120.0
-margin_right = 250.0
-margin_bottom = 144.0
+margin_left = 14.0
+margin_top = 86.0
+margin_right = 254.0
+margin_bottom = 111.0
 theme = ExtResource( 3 )
 secret = true
+
+[node name="serverButton" type="OptionButton" parent="joinPopup"]
+margin_left = 126.0
+margin_top = 14.0
+margin_right = 251.0
+margin_bottom = 34.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="hostPopup" type="Popup" parent="."]
 margin_left = 240.0
