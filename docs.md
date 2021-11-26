@@ -1,8 +1,8 @@
-# IdleChat Documentation
+# Cryptographic Documentation
 
 ## About 
 
-IdleChat is a multiplayer idle game, where users compete to get the most credits using technical know-how and subterfuge
+Cryptographic is a multiplayer idle game, where users compete to get the most credits using technical know-how and subterfuge
 
 ## External Script Format
 
@@ -41,7 +41,7 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### activityLog: Array
 
-- Array containing results of recent activities. Each activity log is itself another array with the following format:
+- Client variable. Array containing results of recent activities. Each activity log is itself another array with the following format:
 
     - Element 0: String, Datetime stamp of when activity occured
 
@@ -55,11 +55,11 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### aliasToID: Dictionary
 
-- Dictionary of connected users, keys are user aliases, values are network IDs
+- Server variable. Dictionary of connected users, keys are user aliases, values are network IDs
 
 ### commandList: Dictionary
 
-- Contains all the commands that users can use. Keys are the commands (with forward slashes, ex: "/help"), values are command descriptions
+- Client variable. Contains all the commands that users can use. Keys are the commands (with forward slashes, ex: "/help"), values are command descriptions
 
 - Commands:
 
@@ -89,19 +89,15 @@ External scripts should be formatted in .csv files. The first line should contai
 	
     - "/shoplist": "Show a list of items to buy",
 	
-    - "/startgame": "SERVER ONLY, forces the game to start",
-	
-    - "/stopgame": "SERVER ONLY, forces the game to stop",
-	
     - "/w": "< username> < message> Send whisper to another user"}
 
 ### connectedList: Dictionary
 
-- Dictionary of connected users, keys are user network ID's, values are usernames
+- Server variable. Dictionary of connected users, keys are user network ID's, values are usernames
 
 ### cycleActionList: Dictionary
 
-- Contains all the actions that can be performed by the /cycle command. Keys are actions, and values are action descriptions
+- Client variable. Contains all the actions that can be performed by the /cycle command. Keys are actions, and values are action descriptions
 
 - Dictionary contents:
 
@@ -117,27 +113,31 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### cycleTimer: Timer
 
-- Variable used to create Timer object that triggers the _process_cycle method
+- Server variable. Used to create Timer object that triggers the _process_cycle method
 
 ### cycleScript: Bool
 
-- Used to detrmine if user is waiting to execute a script once a new cycle starts. If set to true, the run_script function will be called at the start of the cycle
+- Client variable. Used to detrmine if user is waiting to execute a script once a new cycle starts. If set to true, the run_script function will be called at the start of the cycle
 
 ### editPopup: Popup
 
-- Variable used to create the Edit dropdown menu
+- Client variable. Used to create the Edit dropdown menu
 
 ### emptyInventory: Dictionary
 
-- Variable used to create new inventory for user. Contains a dictionary with keys for every item, and values of 0 representing no items in inventory
+- Server variable. Used to create new inventory for user. Contains a dictionary with keys for every item, and values of 0 representing no items in inventory
 
 ### filePopup: Popup
 
-- Variabled used to create the File dropdown menu
+- Client variable. Used to create the File dropdown menu
+
+### gameRunning: Bool
+
+- Server variable, true when the game is running
 
 ### localLog: Array
 
-- Used to store local messages
+- Client variable. Used to store local messages
 
 - Each item in the array is another array containing two items:
 
@@ -147,28 +147,27 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### MAX_PLAYERS: Int
 
-
 - Server variable, sets maximum number of connected users
+
+### messageLog: Array
+
+- Server variable, each element is a message sent between players. This variable is loaded and saved to the file messageLog.dat
+
+    - message format: [dateTime, "message string"]
 
 ### networkInfo: Dict
 
-- Main variable for storing network data
+- Server variable for storing network settings. Saved to the file networkInfo.text. Due to the format of the save file, all dict values need to be either strings or ints. This allows the file to be easily edited to change game settings externally.
 
 - Dictionary contents:
 
     - "autosaveInterval": Int, duration between autosaves
 
-    - "baseCredits": Int, the number of credits the network will generate each cycle, which is then multiplied by the number of connected users
+    - "baseCredits": Int, number used to calculate how many credits each user earns each cycle. The current formula for calculating credits for each user is: baseCredits * ln(users creditMult stat). Example, if a user has a creditMult of 5, and the networks base credits is 10, the credits they would receive is 10 * ln(5) = 16.09, truncated down to 16, since all credits are ints.
 
     - "cycleDuration": Int, how many seconds between each game cycle
 
-    - "gameRunning": Bool, true if game is currently running
-
     - "maxFirewallLevel": Int, maximum level for users firewalls
-
-    - "messageLog": Array, contains all network messages in array format
-
-        - message format: [dateTime, "message string"]
 
     - "minUsers": Int, minimum number of users that need to be connected for the game to start
 
@@ -180,13 +179,9 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "networkName": String, name of the network
 
-    - "skipList": Array, contains aliases of users who will be skipped during the next cycle
-
-    - "userList": Dictionary, contains all userInfo dictionaries for users who have joine the network. Keys are usernames, values are userInfo dicts
-
 ### prefs: Dictionary
 
-- Variable used to store all local user preferences
+- Clinet variable. Used to store all local user preferences
 
 - Dictionary contents:
 
@@ -214,7 +209,7 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### processModes: Dictionary
 
-- Dictionary containing all the available process modes, keys are modes, values are mode descriptions
+- Client variable. Contains all the available process modes, keys are modes, values are mode descriptions
 
     - Process Modes:
 
@@ -228,15 +223,15 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### rng: Random Number Generator
 
-- Used to create pseudo random numbers as needed in various functions
+- Server variable. Used to create pseudo random numbers as needed in various functions
 
 ### saveTimer: Timer
 
-- Variable used to create the Timer object that triggers the autosave method
+- Server variable. Used to create the Timer object that triggers the autosave method
 
 ### sharedNetworkInfo: Dictionary
 
-- Smaller version of the networkInfo dictionary. This one is shared with all connected users.
+- Server and client shared variable. Smaller version of the networkInfo dictionary. This one is shared with all connected users.
 
 - Dictionary contents:
 
@@ -252,9 +247,13 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "userMaxCreds": Dictionary, contains connected users high scores, keys are aliases, values are high scores
 
+### skipList: Array
+
+- Server variable. Contains aliases of users who will be skipped during the next cycle as a result of a successful forceSkip attack
+
 ### userInfo: Dictionary
 
-- Variable used by network to save individual user information
+- Server variable. Used by network to save individual user information
 
 - Dictionary contens:
 
@@ -308,11 +307,11 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### userList: Dictionary
 
-- Dictionary containing all of the userInfo dictionaries, keys are usernames, values are userInfo dicts
+- Server variable. Contains all of the userInfo dictionaries, keys are usernames, values are userInfo dicts. This variable is saved to the file userData.dat
 
 ### userPass: String
 
-- Passoword the user is currently using to connect to a network
+- Client variable. Passoword the user is currently using to connect to a network
 
 ## Methods
 
