@@ -32,8 +32,6 @@ External scripts should be formatted in .csv files. The first line should contai
     >
     > exec,hackWallet,targetAlias
 
-
-
 ## Variables
 
 *Note: Variable names are written in camel case, example: exampleVariableName*
@@ -161,11 +159,17 @@ External scripts should be formatted in .csv files. The first line should contai
 
 - Dictionary contents:
 
+    - "adminList": String, contains user names for users with admin rights. Names are comma seperated with no spaces.
+
     - "autosaveInterval": Int, duration between autosaves
+
+    - "banList": String, contains user names of banned users. Names are comma seperated with no spaces
 
     - "baseCredits": Int, number used to calculate how many credits each user earns each cycle. The current formula for calculating credits for each user is: baseCredits * ln(users creditMult stat). Example, if a user has a creditMult of 5, and the networks base credits is 10, the credits they would receive is 10 * ln(5) = 16.09, truncated down to 16, since all credits are ints.
 
     - "cycleDuration": Int, how many seconds between each game cycle
+
+    - "ddosThreshold": Int, ddos level above which users will be placed into ddos protection, preventing further hacks until their ddos level falls back below the threshold
 
     - "maxFirewallLevel": Int, maximum level for users firewalls
 
@@ -255,7 +259,7 @@ External scripts should be formatted in .csv files. The first line should contai
 
 - Server variable. Used by network to save individual user information
 
-- Dictionary contens:
+- Dictionary contents:
 
     - "activeCycles": Int, number of cycles the user has been active
 
