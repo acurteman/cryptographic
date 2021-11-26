@@ -315,8 +315,20 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="helpButton" type="MenuButton" parent="."]
+anchor_left = 0.102
+anchor_right = 0.15
+anchor_bottom = 0.05
+margin_left = -0.448006
+margin_right = 0.399994
+focus_mode = 2
+theme = ExtResource( 3 )
+text = "Help"
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
 [node name="joinPopup" type="Popup" parent="."]
-visible = true
 margin_left = 290.0
 margin_top = 130.0
 margin_right = 550.0
@@ -378,169 +390,6 @@ margin_left = 126.0
 margin_top = 14.0
 margin_right = 251.0
 margin_bottom = 34.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="hostPopup" type="Popup" parent="."]
-margin_left = 240.0
-margin_top = 110.0
-margin_right = 560.0
-margin_bottom = 410.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ColorRect" type="ColorRect" parent="hostPopup"]
-margin_right = 320.0
-margin_bottom = 300.0
-color = Color( 0.133333, 0.156863, 0.192157, 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="Label" type="Label" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 170.0
-margin_right = 47.0
-margin_bottom = 195.0
-theme = ExtResource( 3 )
-text = "Port: "
-valign = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="hostPort" type="LineEdit" parent="hostPopup"]
-margin_left = 220.0
-margin_top = 170.0
-margin_right = 308.0
-margin_bottom = 199.0
-theme = ExtResource( 3 )
-text = "4242"
-align = 2
-max_length = 6
-
-[node name="hostButton" type="Button" parent="hostPopup"]
-margin_left = 140.0
-margin_top = 270.0
-margin_right = 185.0
-margin_bottom = 295.0
-theme = ExtResource( 3 )
-text = "Host"
-
-[node name="networkNameLabel" type="Label" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 10.0
-margin_right = 118.0
-margin_bottom = 29.0
-theme = ExtResource( 3 )
-text = "Network Name:"
-
-[node name="networkName" type="LineEdit" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 30.0
-margin_right = 310.0
-margin_bottom = 60.0
-theme = ExtResource( 3 )
-text = "default"
-align = 2
-
-[node name="saveDirLabel" type="Label" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 70.0
-margin_right = 119.0
-margin_bottom = 95.0
-theme = ExtResource( 3 )
-text = "Save Directory:"
-
-[node name="saveDir" type="LineEdit" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 90.0
-margin_right = 309.0
-margin_bottom = 119.0
-theme = ExtResource( 3 )
-
-[node name="saveBrowseBtn" type="Button" parent="hostPopup"]
-margin_left = 240.0
-margin_top = 130.0
-margin_right = 309.0
-margin_bottom = 155.0
-theme = ExtResource( 3 )
-text = "Browse"
-
-[node name="saveDirPopup" type="FileDialog" parent="hostPopup"]
-margin_right = 494.0
-margin_bottom = 380.0
-window_title = "Open a Directory"
-mode = 2
-access = 2
-current_dir = "/home/alex/Godot/Cryptographic"
-current_path = "/home/alex/Godot/Cryptographic/"
-
-[node name="passLabel" type="Label" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 210.0
-margin_right = 84.0
-margin_bottom = 229.0
-theme = ExtResource( 3 )
-text = "Password:"
-
-[node name="passInput" type="LineEdit" parent="hostPopup"]
-margin_left = 10.0
-margin_top = 230.0
-margin_right = 310.0
-margin_bottom = 259.0
-theme = ExtResource( 3 )
-align = 2
-secret = true
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="overwriteSave" type="Popup" parent="."]
-margin_left = 331.288
-margin_top = 179.743
-margin_right = 581.288
-margin_bottom = 279.743
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ColorRect" type="ColorRect" parent="overwriteSave"]
-margin_right = 250.0
-margin_bottom = 100.0
-color = Color( 0.133333, 0.156863, 0.192157, 1 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="warningLabel" type="Label" parent="overwriteSave"]
-margin_right = 250.0
-margin_bottom = 66.0
-theme = ExtResource( 3 )
-align = 1
-valign = 1
-autowrap = true
-
-[node name="yesBtn" type="Button" parent="overwriteSave"]
-margin_left = 47.521
-margin_top = 70.092
-margin_right = 110.521
-margin_bottom = 96.092
-theme = ExtResource( 3 )
-text = "YES"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="noBtn" type="Button" parent="overwriteSave"]
-margin_left = 130.666
-margin_top = 71.4618
-margin_right = 184.666
-margin_bottom = 96.4618
-theme = ExtResource( 3 )
-text = "NO"
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -780,24 +629,6 @@ margin_bottom = -0.0800171
 text = "1.0"
 align = 2
 
-[node name="loadPopup" type="FileDialog" parent="."]
-margin_left = 205.262
-margin_top = 113.246
-margin_right = 857.262
-margin_bottom = 469.246
-window_title = "Load Network"
-resizable = true
-dialog_hide_on_ok = true
-mode_overrides_title = false
-mode = 0
-access = 2
-filters = PoolStringArray( "*.dat" )
-current_dir = "/home/alex/Godot/Cryptographic"
-current_path = "/home/alex/Godot/Cryptographic/"
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
 [node name="helpBox" type="PopupPanel" parent="."]
 anchor_left = 0.215
 anchor_top = 0.217
@@ -822,28 +653,28 @@ bbcode_enabled = true
 bbcode_text = "[center][b][u]Cryptographic[/u][/b][/center]
 
 [b][u][color=silver]Introduction:[/color][/u][/b]
-	If you have been asking yourself, \"What is Cryptographic?\", \"Why does everyone want it?\", and \"How do I get some for myself?\", you are in the right spot. If you haven't been asking these questions, you should start now. To start off, let us explain exactly what Cryptographic is, and how joining will provide you with everything your heart desires. Cryptographic is the premier cooperative crytpocurrency community. Users who join a Cryptographic network work together, by sharing the processing power of their personal computing devices, to generate the worlds leading crypto currency, the CryptoCredit. These CryptoCredits, or credits for short, are then distribed back to the memebers of the network. Don't let your computing devices lay around your house unused. Join Cryptographic today and put them to work generating credits which you can use to make your wildest dreams a reality!
+	If you have been asking yourself, \"What is Cryptographic?\", \"Why does everyone want it?\", and \"How do I get some for myself?\", you are in the right spot. If you haven't been asking these questions, you should start now. To start off, let us explain exactly what Cryptographic is, and how joining will provide you with everything your heart desires. Cryptographic is the premier cooperative crytpocurrency community. Users who join a Cryptographic network work together, by sharing the processing power of their personal computing devices, to generate the worlds leading crypto currency, the CryptoCredit. These CryptoCredits, or credits for short, are then distributed back to the members of the network. Don't let your computing devices lay around your house unused. Join Cryptographic today and put them to work generating credits which you can use to make your wildest dreams a reality!
 	
 [b][u][color=silver]How to get your credits:[/color][/u][/b]
-	Before joining a network, be sure to check out your user preferences to garauntee your experience is 100% customized to your tastes. After you have fined tuned your prefs, select join network and enter your desired networks address, port, and password. Then, assuming everything checks out, BAM, your in. Once a suffiecient number of users have connected to a Cryptographic network, it will start generating and destributing credits. This process is not instant, unfortunately. It takes a small amount of time for a network to generate credits. This sequence of generating and then distributing credits is known as the network cycle. Cryptographic networks are deployed with the latest in machine learning technology, and have the capabilty of automatically starting a new cycle immediately after the previous has finished. [u]Wow.[/u] All you need to do is sit back, relax, remain connected to the network, and you will recieve your lucrative share of sweet, sweet crypto goodness. 
+	Before joining a network, be sure to check out your user preferences to guarantee your experience is 100% customized to your tastes. After you have fined tuned your prefs, select join network and select your desired network, and then enter password. Then, assuming everything checks out, BAM, your in. Once a sufficient number of users have connected to a Cryptographic network, it will start generating and distributing credits. This process is not instant, unfortunately. It takes a small amount of time for a network to generate credits. This sequence of generating and then distributing credits is known as the network cycle. Cryptographic networks are deployed with the latest in machine learning technology, and have the capabilty of automatically starting a new cycle immediately after the previous has finished. [u]Wow.[/u] All you need to do is sit back, relax, remain connected to the network, and you will receive your lucrative share of sweet crypto goodness. 
 	
-	If you have more of a hands on approach to life though, you may not be content to sit idly back and leave your income unnattended. Fortunately for you, Cryptographic comes equipped with a large suite of advanced user capabilities for you to maximize your credit wealth and flex your innate superiority. To learn more, simply type /help into the Cryptographic chat interface, and you will be served a full list of commands to peruse at your leisure. If your apatite for knowledge is still left unsatisfied, below you will find a more complete description of the inner workings of a Cryptographic network, and how to use the tools available to you with the skill of a master craftman.
+	If you have more of a hands on approach to life though, you may not be content to sit idly back and leave your income unattended. Fortunately for you, Cryptographic comes equipped with a large suite of advanced user capabilities for you to maximize your credit wealth and flex your innate superiority. To learn more, simply type /help into the Cryptographic chat interface, and you will be served a full list of commands to peruse at your leisure. If your apatite for knowledge is still left unsatisfied, below you will find a more complete description of the inner workings of a Cryptographic network, and how to use the tools available to you with the skill of a master craftsman.
 	
-	[b][color=red]WARNING!!![/color][/b] Due to unforseen and completely unavoidable circumstances, Cryptograhic networks may or may not be vulnerable to various nefarous software attacks. Cryptographic is not resposible for the loss of user's credits due to the malicous activity of others. In order to help our users help themselves, we have provided information on how these hacks work, and how to defend against them. Cryptographic does not condone the use of these hacks to try and take the hard earned credits of others. Doing so will result in immediate finger wagging, and such users will surely be overcome be deep sense of moral guilt and shame. 
+	[b][color=red]WARNING!!![/color][/b] Due to unforeseen and completely unavoidable circumstances, Cryptograhic networks may or may not be vulnerable to various nefarious software attacks. Cryptographic is not responsible for the loss of user's credits due to the malicious activity of others. In order to help our users help themselves, we have provided information on how these hacks work, and how to defend against them. Cryptographic does not condone the use of these hacks to try and take the hard earned credits of others. Doing so will result in immediate finger wagging, and such users will surely be overcome be deep sense of moral guilt and shame. 
 	
 [b][u][color=silver]Mechanics:[/color][/u][/b]
-	[u]User Settings:[/u] Before joining a network, it is helpful to check your user settings. This ensures a reduction in gross quantities of user error, which are definitely not a result of poor design choices by Cryptographic. The first setting to familiarize yourself with is the user name. This is the name that networks will use to track you and save all of your precious info. The user name you choose needs to be unique. Attempting to join a network is a user name that is already taken will result in login failer. Sad. Your user name is not visible to other members of networks you join. Next up is your alias. This is the name that will be visible to other network members. Feel free to use a different alias each time you connect to a network (Note: When you disconnect from a server, you will be placed on cooldown for 30 seconds. During which time you can not reconnect. This is to prevent users from engaging in the silly activity of spamming logins with different aliases to attempt to confuse and fluster other network members). The other important setting to pay attention to is your user color. This may be the most significant choice among all preferences. The color you enter into this field will be applied to your alias while chatting with other member networks. Don't look like a scrub by using the default color. Any other user preferences can safely be ignored for the time being, since they probably don't even work yet. 
+	[u]User Settings:[/u] Before joining a network, it is helpful to check your user settings. This ensures a reduction in gross quantities of user error, which are definitely not a result of poor design choices by Cryptographic. The first setting to familiarize yourself with is the user name. This is the name that networks will use to track you and save all of your precious info. The user name you choose needs to be unique. Attempting to join a network is a user name that is already taken will result in login failer. Sad. Your user name is not visible to other members of networks you join. Next up is your alias. This is the name that will be visible to other network members. Feel free to use a different alias each time you connect to a network (Note: When you disconnect from a server, you will be placed on cool down for 30 seconds. During which time you can not reconnect. This is to prevent users from engaging in the silly activity of spamming logins with different aliases to attempt to confuse and fluster other network members). The other important setting to pay attention to is your user color. This may be the most significant choice among all preferences. The color you enter into this field will be applied to your alias while chatting with other member networks. Don't look like a scrub by using the default color. Any other user preferences can safely be ignored for the time being, since they probably don't even work yet. 
 
-	[u]Attributes:[/u] Each user has 3 basic attributes, which affect how they interact with the Cryptographic network and other users. The credit multiplier stat determines how many credits a user will recieve each cycle. The attack and defense stats will effect the outcomes of user hacks, should one lack any shred of moral fiber and wish to engage in such hideous activities. Each cycle, your stats will be increased.  You're welcome. You can customize which stats are enhanced by using the /setmode command. If you have buddhist inclinations, and prefer to walk the middle path, use \"/setmode balanced\" to recieve a .1 increase to each stat each cycle. To get a larger .3 increase to a single stat each cycle, use options creditMult, attack, or defense.
+	[u]Attributes:[/u] Each user has 3 basic attributes, which affect how they interact with the Cryptographic network and other users. The credit multiplier stat determines how many credits a user will receive each cycle. The attack and defense stats will effect the outcomes of user hacks, should one lack any shred of moral fiber and wish to engage in such hideous activities. Each cycle, your stats will be increased.  You're welcome. You can customize which stats are enhanced by using the /setmode command. If you have Buddhist inclinations, and prefer to walk the middle path, use \"/setmode balanced\" to receive a .1 increase to each stat each cycle. To get a larger .3 increase to a single stat each cycle, use options creditMult, attack, or defense.
 	
 	[u]Cycle Actions:[/u] As a member of a Cryptographic network, you are given the option of executing one free action every cycle. Congrats! To take advantage of this wonderful opportunity, use the /cycle command to queue up an action. User actions are processed at the end of each cycle, after the network has finished generating credits. If you're feeling ambitious, use the /cycle command repeatedly to queue up as many actions as you want. Each action will be executed one at a time every cycle until all actions have been executed. Here is a list of currently available actions:
 		- forceSkip: Forces the network to skip a user on the next cycle. Depriving them of 1 cycle of income and delaying
 							 any queued cycle actions
 		- fortFirewall: Fortifies your personal firewall, which will prevent 1 hack which would have otherwise been successful. 
-		- hackWallet: Attempt to syphon credits from another user
+		- hackWallet: Attempt to siphon credits from another user
 		- shuffleProc: Shuffles the order user actions are processed by the network
 		- traceRoute: Initiates 1 trace route program. If you get hacked and have an active trace route, you will learn the identity 
-								of the attacker and get a permanant attack bonus against them.
+								of the attacker and get a permanent attack bonus against them.
 		
 
 	-Describe store and items
@@ -851,28 +682,28 @@ bbcode_text = "[center][b][u]Cryptographic[/u][/b][/center]
 text = "Cryptographic
 
 Introduction:
-	If you have been asking yourself, \"What is Cryptographic?\", \"Why does everyone want it?\", and \"How do I get some for myself?\", you are in the right spot. If you haven't been asking these questions, you should start now. To start off, let us explain exactly what Cryptographic is, and how joining will provide you with everything your heart desires. Cryptographic is the premier cooperative crytpocurrency community. Users who join a Cryptographic network work together, by sharing the processing power of their personal computing devices, to generate the worlds leading crypto currency, the CryptoCredit. These CryptoCredits, or credits for short, are then distribed back to the memebers of the network. Don't let your computing devices lay around your house unused. Join Cryptographic today and put them to work generating credits which you can use to make your wildest dreams a reality!
+	If you have been asking yourself, \"What is Cryptographic?\", \"Why does everyone want it?\", and \"How do I get some for myself?\", you are in the right spot. If you haven't been asking these questions, you should start now. To start off, let us explain exactly what Cryptographic is, and how joining will provide you with everything your heart desires. Cryptographic is the premier cooperative crytpocurrency community. Users who join a Cryptographic network work together, by sharing the processing power of their personal computing devices, to generate the worlds leading crypto currency, the CryptoCredit. These CryptoCredits, or credits for short, are then distributed back to the members of the network. Don't let your computing devices lay around your house unused. Join Cryptographic today and put them to work generating credits which you can use to make your wildest dreams a reality!
 	
 How to get your credits:
-	Before joining a network, be sure to check out your user preferences to garauntee your experience is 100% customized to your tastes. After you have fined tuned your prefs, select join network and enter your desired networks address, port, and password. Then, assuming everything checks out, BAM, your in. Once a suffiecient number of users have connected to a Cryptographic network, it will start generating and destributing credits. This process is not instant, unfortunately. It takes a small amount of time for a network to generate credits. This sequence of generating and then distributing credits is known as the network cycle. Cryptographic networks are deployed with the latest in machine learning technology, and have the capabilty of automatically starting a new cycle immediately after the previous has finished. Wow. All you need to do is sit back, relax, remain connected to the network, and you will recieve your lucrative share of sweet, sweet crypto goodness. 
+	Before joining a network, be sure to check out your user preferences to guarantee your experience is 100% customized to your tastes. After you have fined tuned your prefs, select join network and select your desired network, and then enter password. Then, assuming everything checks out, BAM, your in. Once a sufficient number of users have connected to a Cryptographic network, it will start generating and distributing credits. This process is not instant, unfortunately. It takes a small amount of time for a network to generate credits. This sequence of generating and then distributing credits is known as the network cycle. Cryptographic networks are deployed with the latest in machine learning technology, and have the capabilty of automatically starting a new cycle immediately after the previous has finished. Wow. All you need to do is sit back, relax, remain connected to the network, and you will receive your lucrative share of sweet crypto goodness. 
 	
-	If you have more of a hands on approach to life though, you may not be content to sit idly back and leave your income unnattended. Fortunately for you, Cryptographic comes equipped with a large suite of advanced user capabilities for you to maximize your credit wealth and flex your innate superiority. To learn more, simply type /help into the Cryptographic chat interface, and you will be served a full list of commands to peruse at your leisure. If your apatite for knowledge is still left unsatisfied, below you will find a more complete description of the inner workings of a Cryptographic network, and how to use the tools available to you with the skill of a master craftman.
+	If you have more of a hands on approach to life though, you may not be content to sit idly back and leave your income unattended. Fortunately for you, Cryptographic comes equipped with a large suite of advanced user capabilities for you to maximize your credit wealth and flex your innate superiority. To learn more, simply type /help into the Cryptographic chat interface, and you will be served a full list of commands to peruse at your leisure. If your apatite for knowledge is still left unsatisfied, below you will find a more complete description of the inner workings of a Cryptographic network, and how to use the tools available to you with the skill of a master craftsman.
 	
-	WARNING!!! Due to unforseen and completely unavoidable circumstances, Cryptograhic networks may or may not be vulnerable to various nefarous software attacks. Cryptographic is not resposible for the loss of user's credits due to the malicous activity of others. In order to help our users help themselves, we have provided information on how these hacks work, and how to defend against them. Cryptographic does not condone the use of these hacks to try and take the hard earned credits of others. Doing so will result in immediate finger wagging, and such users will surely be overcome be deep sense of moral guilt and shame. 
+	WARNING!!! Due to unforeseen and completely unavoidable circumstances, Cryptograhic networks may or may not be vulnerable to various nefarious software attacks. Cryptographic is not responsible for the loss of user's credits due to the malicious activity of others. In order to help our users help themselves, we have provided information on how these hacks work, and how to defend against them. Cryptographic does not condone the use of these hacks to try and take the hard earned credits of others. Doing so will result in immediate finger wagging, and such users will surely be overcome be deep sense of moral guilt and shame. 
 	
 Mechanics:
-	User Settings: Before joining a network, it is helpful to check your user settings. This ensures a reduction in gross quantities of user error, which are definitely not a result of poor design choices by Cryptographic. The first setting to familiarize yourself with is the user name. This is the name that networks will use to track you and save all of your precious info. The user name you choose needs to be unique. Attempting to join a network is a user name that is already taken will result in login failer. Sad. Your user name is not visible to other members of networks you join. Next up is your alias. This is the name that will be visible to other network members. Feel free to use a different alias each time you connect to a network (Note: When you disconnect from a server, you will be placed on cooldown for 30 seconds. During which time you can not reconnect. This is to prevent users from engaging in the silly activity of spamming logins with different aliases to attempt to confuse and fluster other network members). The other important setting to pay attention to is your user color. This may be the most significant choice among all preferences. The color you enter into this field will be applied to your alias while chatting with other member networks. Don't look like a scrub by using the default color. Any other user preferences can safely be ignored for the time being, since they probably don't even work yet. 
+	User Settings: Before joining a network, it is helpful to check your user settings. This ensures a reduction in gross quantities of user error, which are definitely not a result of poor design choices by Cryptographic. The first setting to familiarize yourself with is the user name. This is the name that networks will use to track you and save all of your precious info. The user name you choose needs to be unique. Attempting to join a network is a user name that is already taken will result in login failer. Sad. Your user name is not visible to other members of networks you join. Next up is your alias. This is the name that will be visible to other network members. Feel free to use a different alias each time you connect to a network (Note: When you disconnect from a server, you will be placed on cool down for 30 seconds. During which time you can not reconnect. This is to prevent users from engaging in the silly activity of spamming logins with different aliases to attempt to confuse and fluster other network members). The other important setting to pay attention to is your user color. This may be the most significant choice among all preferences. The color you enter into this field will be applied to your alias while chatting with other member networks. Don't look like a scrub by using the default color. Any other user preferences can safely be ignored for the time being, since they probably don't even work yet. 
 
-	Attributes: Each user has 3 basic attributes, which affect how they interact with the Cryptographic network and other users. The credit multiplier stat determines how many credits a user will recieve each cycle. The attack and defense stats will effect the outcomes of user hacks, should one lack any shred of moral fiber and wish to engage in such hideous activities. Each cycle, your stats will be increased.  You're welcome. You can customize which stats are enhanced by using the /setmode command. If you have buddhist inclinations, and prefer to walk the middle path, use \"/setmode balanced\" to recieve a .1 increase to each stat each cycle. To get a larger .3 increase to a single stat each cycle, use options creditMult, attack, or defense.
+	Attributes: Each user has 3 basic attributes, which affect how they interact with the Cryptographic network and other users. The credit multiplier stat determines how many credits a user will receive each cycle. The attack and defense stats will effect the outcomes of user hacks, should one lack any shred of moral fiber and wish to engage in such hideous activities. Each cycle, your stats will be increased.  You're welcome. You can customize which stats are enhanced by using the /setmode command. If you have Buddhist inclinations, and prefer to walk the middle path, use \"/setmode balanced\" to receive a .1 increase to each stat each cycle. To get a larger .3 increase to a single stat each cycle, use options creditMult, attack, or defense.
 	
 	Cycle Actions: As a member of a Cryptographic network, you are given the option of executing one free action every cycle. Congrats! To take advantage of this wonderful opportunity, use the /cycle command to queue up an action. User actions are processed at the end of each cycle, after the network has finished generating credits. If you're feeling ambitious, use the /cycle command repeatedly to queue up as many actions as you want. Each action will be executed one at a time every cycle until all actions have been executed. Here is a list of currently available actions:
 		- forceSkip: Forces the network to skip a user on the next cycle. Depriving them of 1 cycle of income and delaying
 							 any queued cycle actions
 		- fortFirewall: Fortifies your personal firewall, which will prevent 1 hack which would have otherwise been successful. 
-		- hackWallet: Attempt to syphon credits from another user
+		- hackWallet: Attempt to siphon credits from another user
 		- shuffleProc: Shuffles the order user actions are processed by the network
 		- traceRoute: Initiates 1 trace route program. If you get hacked and have an active trace route, you will learn the identity 
-								of the attacker and get a permanant attack bonus against them.
+								of the attacker and get a permanent attack bonus against them.
 		
 
 	-Describe store and items
@@ -893,13 +724,6 @@ __meta__ = {
 [connection signal="item_activated" from="connectedBox" to="." method="_on_connectedBox_item_activated"]
 [connection signal="text_entered" from="inputText" to="." method="_on_inputText_text_entered"]
 [connection signal="pressed" from="joinPopup/joinButton" to="." method="_on_joinButton_pressed"]
-[connection signal="pressed" from="hostPopup/hostButton" to="." method="_on_hostButton_pressed"]
-[connection signal="pressed" from="hostPopup/saveBrowseBtn" to="." method="_on_saveBrowseBtn_pressed"]
-[connection signal="confirmed" from="hostPopup/saveDirPopup" to="." method="_on_saveDirPopup_confirmed"]
-[connection signal="dir_selected" from="hostPopup/saveDirPopup" to="." method="_on_saveDirPopup_dir_selected"]
-[connection signal="pressed" from="overwriteSave/yesBtn" to="." method="_on_yesBtn_pressed"]
-[connection signal="pressed" from="overwriteSave/noBtn" to="." method="_on_noBtn_pressed"]
 [connection signal="pressed" from="userSettingsPopup/userApplyButton" to="." method="_on_userApplyButton_pressed"]
 [connection signal="pressed" from="userSettingsPopup/logLocBrowseBtn" to="." method="_on_logLocBrowseBtn_pressed"]
 [connection signal="dir_selected" from="userSettingsPopup/logLocPopup" to="." method="_on_logLocPopup_dir_selected"]
-[connection signal="confirmed" from="loadPopup" to="." method="_on_loadPopup_confirmed"]

@@ -1,9 +1,13 @@
 extends Control
 
 var activityLog = [] # Stores list of recent activities and results
+var adminCommands = {
+	"/ban": "<alias> Bans user from the server",
+	"/kick": "<alias> Kicks user from the server",
+	"/startgame": "Forces the game to start",
+	"/stopgame": "Forces the game to stop"}
 var commandList = {
 	"/buy": "<item name> <quanitity> Purchase an item",
-	#"/changealias": "<newalias> Change your current alias",
 	"/changecolor": "<newcolor> Change your current color",
 	"/changepass": "<newpassword> Change your current password",
 	"/cycle": "<action> <target> Set your action for the current cycle, with optional target user",
@@ -15,8 +19,6 @@ var commandList = {
 	"/resetpass": "Reset your password to the default network password",
 	"/setmode": "<mode> Set your current process mode",
 	"/shoplist": "Show a list of items to buy",
-	"/startgame": "SERVER ONLY, forces the game to start",
-	"/stopgame": "SERVER ONLY, forces the game to stop",
 	"/w": "<username> <message> Send whisper to another user"}
 var cycleActionList = {
 	"forceSkip": "Force the network to skip a user on the next cycle",
@@ -28,6 +30,7 @@ var cycleScript = false
 var editPopup
 var extCycleScript = false
 var filePopup
+var helpPopup
 var IP_ADDRESS = "127.0.0.1"
 var localLog = []
 var outputTimer
@@ -44,9 +47,9 @@ var prefs = {
 	"outputInterval": 1.0}
 var processModes = {
 	"balanced": "Attack, defence, and creditMult stat each recieve a .1 increase each cycle",
-	"attack": "Attack stat recieves a .3 increase each cycle",
-	"defense": "Defense stat recieves a .3 increase each cycle",
-	"creditMult": "Credit multiplier stat recieves a .3 increase each cycle"}
+	"attack": "Attack stat recieves a .2 increase each cycle, others a .5",
+	"defense": "Defense stat recieves a .2 increase each cycle, others a .5",
+	"creditMult": "Credit multiplier stat recieves a .2 increase each cycle, others a .5"}
 var scriptCommands = {
 	"buy": "<item name> <quanitity> Purchase an item",
 	"cycle": "<action> Set cycle action",
@@ -61,7 +64,8 @@ var sharedNetworkInfo = {
 	"connectedUsers": {},
 	"processOrder": []}
 var shopItems = {
-	"forceSkip": 75,
+	"changeAlias": 250,
+	"forceSkip": 150,
 	"fortFirewall": 50,
 	"hackWallet": 100,
 	"shuffleProc": 15,
@@ -69,6 +73,7 @@ var shopItems = {
 var userInfo = {}
 var userPass = ""
 var userScript = []
+var version = "0.0.1"
 
 func _ready():
 	#$helpBox.popup()
@@ -94,6 +99,10 @@ func _ready():
 	editPopup.add_item("User Settings")
 	editPopup.connect("id_pressed", self, "_on_edit_item_pressed")
 	
+	helpPopup = $helpButton.get_popup()
+	helpPopup.add_item("About")
+	helpPopup.connect("id_pressed", self, "_on_help_item_pressed")
+	
 	$joinPopup/serverButton.add_item("Local")
 	$joinPopup/serverButton.add_item("Network")
 	
@@ -103,8 +112,6 @@ func _ready():
 	
 	$userSettingsPopup/outputButton.add_item("Cycle", 1)
 	$userSettingsPopup/outputButton.add_item("Interval", 2)
-	
-	$hostPopup/saveDir.text = $hostPopup/saveDirPopup.current_path
 
 func _interval_execute():
 # Local function
@@ -203,13 +210,9 @@ func _on_file_item_pressed(ID):
 	elif ID == 2: # Quit
 		exit()
 
-#func _on_hostButton_pressed():
-#	$hostPopup.visible = false
-#	networkInfo["networkName"] = $hostPopup/networkName.text
-#	networkInfo["netSavePath"] = $hostPopup/saveDir.text + $hostPopup/networkName.text + ".dat"
-#	networkInfo["netPort"] = int($hostPopup/hostPort.text)
-#	networkInfo["netPass"] = $hostPopup/passInput.text
-#	check_network(networkInfo["networkName"])
+func _on_help_item_pressed(ID):
+	if ID == 0: # About
+		$helpBox.popup()
 
 func _on_inputText_text_entered(newText):
 	if newText.length() > 0: # check for blank input
@@ -217,9 +220,10 @@ func _on_inputText_text_entered(newText):
 			process_command(newText)
 			$inputText.clear()
 		else:
+			# If connected to a server
 			if get_tree().has_network_peer():
 				#Create the message and tell everyone else to add it to their history
-				rpc("send_message", "network", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
+				rpc_id(1, "broadcast_message", "network", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
 				$inputText.clear()
 			else:
 				update_message("local", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], newText)
@@ -245,10 +249,6 @@ func _on_joinButton_pressed():
 	
 	#Update status and username for chatroom
 	update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Trying to join to " + IP_ADDRESS)
-
-#func _on_loadPopup_confirmed(): # Network selected to load
-#	load_network($loadPopup.current_path)
-#	create_network()
 
 func _on_logLocBrowseBtn_pressed():
 	$userSettingsPopup/logLocPopup.popup()
@@ -340,14 +340,6 @@ func _on_userApplyButton_pressed():
 	prefs["outputInterval"] = float($userSettingsPopup/outputInterval.text)
 	save_prefs()
 
-#func _on_yesBtn_pressed():
-#	$overwriteSave.visible = false
-#	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
-#	save_localLog()
-#	create_userInfo(prefs["userName"], networkInfo["netPass"])
-#	create_network()
-#	save_network()
-
 func add_cycle_action(command):
 # Client function
 # Handles the /cycle command, checks for valid syntax, then sends request to server
@@ -365,15 +357,6 @@ func add_cycle_action(command):
 	
 	# Send action to server
 	rpc_id(1, "set_cycle_action", get_tree().get_network_unique_id(), command)
-
-func change_alias(command):
-# Server function
-# CURRENTLY DISABLED
-# Changes a users alias
-	if len(command) != 2:
-		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid syntax: /changealias <newalias>")
-	else:
-		rpc_id(1, "update_alias", command[1], prefs["userAlias"], get_tree().get_network_unique_id())
 
 func change_color(command):
 # Client function
@@ -464,12 +447,13 @@ remote func client_update_alias(newAlias):
 # Client function
 # Called by server when user gets a new alias
 	prefs["userAlias"] = newAlias
+	refresh_statusBox()
 
 func connected():
 # Client function
 # Called when connection established to server, makes login request to server
 	update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Connection succesful, attempting login...")
-	rpc_id(1, "net_login", prefs["userName"], userPass, prefs["userAlias"])
+	rpc_id(1, "net_login", prefs["userName"], userPass, prefs["userAlias"], version)
 
 func connected_fail():
 # Client function
@@ -645,16 +629,29 @@ func process_action_script(action, userID):
 		set_mode(action)
 
 func process_command(newCommand):
+# Main function for processing commands entered by users using the / format
 	var command = newCommand.split(" ")
-	if not commandList.has(command[0]):
+	
+	# Check if entered command was an admin command
+	if adminCommands.has(command[0]):
+		if command[0] == "/ban":
+			rpc_id(1, "bad_user", command[1])
+		
+		elif command[0] == "/kick":
+			rpc_id(1, "kick_alias", command[1])
+		
+		elif command[0] == "/startgame":
+			rpc_id(1, "remote_start")
+	
+		elif command[0] == "/stopgame":
+			rpc_id(1, "remote_stop")
+	
+	# Check for valid user command
+	elif not commandList.has(command[0]):
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
 	
 	elif command[0] == "/buy":
 		check_buy(command)
-	
-	elif command[0] == "/changealias":
-		#change_alias(command)
-		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently disabled')
 	
 	elif command[0] == "/changecolor":
 		change_color(command)
@@ -707,18 +704,13 @@ func process_command(newCommand):
 			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(shopItems[item]))
 			$tabs/Messages/messageBox.newline()
 	
-	elif command[0] == "/startgame":
-		# NEED TO REWRITE FUNCTION ON SERVER 
-		# NEED TO ADD A SERVER ADMIN ROLE SO A CLIENT CAN EXECUTE SERVER ONLY COMMANDS
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently borked')
-	
-	elif command[0] == "/stopgame":
-		# SEE ABOVE NOTE FOR /STARTGAME
-		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently borked')
-	
 	elif command[0] == "/w":
 		# /w [userAlias] [message]
 		send_whisper(command)
+
+remote func receive_message(messageType, curTime, color, name, newText):
+# Main function for receiving messages from other users
+	update_message(messageType, curTime, color, name, newText)
 
 remote func refresh_connectedList():
 	$connectedBox.clear()
@@ -748,9 +740,16 @@ remote func refresh_statusBox():
 	$statusBox.add_item("Max credits: " + str(userInfo["maxCredits"]))
 	$statusBox.add_item("Active Cycles: " + str(userInfo["activeCycles"]))
 
+remote func remote_quit():
+# Remote function for server to disconnect users
+	
+	# Checking that only server called
+	if get_tree().get_rpc_sender_id() == 1:
+		disc()
+
 func reset_password(command):
 	rpc_id(1, "change_password", command)
-	
+
 func run_script():
 	for line in userScript:
 		process_action_script(line, get_tree().get_network_unique_id())
@@ -811,10 +810,6 @@ func save_prefs():
 	file.store_var(prefs)
 	file.close()
 
-remotesync func send_message(messageType, curTime, color, name, newText):
-# Used as the main method of sending messages to other users
-		update_message(messageType, curTime, color, name, newText)
-
 func send_whisper(command):
 	var wMessage = ""
 	for i in range(2, len(command)):
@@ -822,7 +817,7 @@ func send_whisper(command):
 	if not sharedNetworkInfo["connectedUsers"].has(command[1]):
 		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Unknown user: " + command[1])
 	else:
-		rpc_id(sharedNetworkInfo["connectedUsers"][command[1]], "send_message", "local",
+		rpc_id(sharedNetworkInfo["connectedUsers"][command[1]], "receive_message", "local",
 		OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
 		update_message("local", OS.get_datetime(), prefs["userColor"], prefs["userAlias"], "<w>" + command[1] + ": " + wMessage)
 
