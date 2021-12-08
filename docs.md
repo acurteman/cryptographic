@@ -86,6 +86,8 @@ External scripts should be formatted in .csv files. The first line should contai
     - "/setmode": "< mode> Set your current process mode",
 	
     - "/shoplist": "Show a list of items to buy",
+
+    - "/transfer": < target > < amount > Transfer credits to another user
 	
     - "/w": "< username> < message> Send whisper to another user"}
 
@@ -183,9 +185,11 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "networkName": String, name of the network
 
+    - "shopTax": Int, percentage of users maxCredits that gets added to every purchase
+
 ### prefs: Dictionary
 
-- Clinet variable. Used to store all local user preferences
+- Client variable. Used to store all local user preferences
 
 - Dictionary contents:
 
@@ -316,6 +320,11 @@ External scripts should be formatted in .csv files. The first line should contai
 ### userPass: String
 
 - Client variable. Passoword the user is currently using to connect to a network
+
+
+### version: string
+
+- Server and client variable. Contains the current version number, server and client must have matching version numbers for a client to log in. 
 
 ## Methods
 

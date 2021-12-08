@@ -27,7 +27,8 @@ var networkInfo = {
 	"minUsers": 2,
 	"netPass": "password",
 	"netPort": 42420,
-	"networkName": "defaultNet"}
+	"networkName": "defaultNet",
+	"shopTax": 5}
 var rng = RandomNumberGenerator.new()
 var saveTimer
 var sharedNetworkInfo = {
@@ -35,6 +36,7 @@ var sharedNetworkInfo = {
 	"messageLog": [],
 	"connectedUsers": {},
 	"processOrder": [],
+	"shopTax": 5,
 	"userMaxCreds": {}}
 var shopItems = {
 	"changeAlias": 250,
@@ -45,7 +47,7 @@ var shopItems = {
 	"traceRoute": 75}
 var skipList = []
 var userList = {} # Saves user data on the network, keys are user names
-var version = "0.0.1"
+var version = "0.0.2"
 
 func _ready():
 	dedicated = true
@@ -79,38 +81,34 @@ func _process_cycle():
 			# Skip user if on skipList
 			if skipList.has(IDtoAlais[user]):
 				server_message(user, "sys", "Cycle skipped due to malicious activity")
-				return
 			
-			# Awarding credits
-			var userCredits = int(cycleCredits * log(userList[connectedList[user]]["creditMult"]))
-			userList[connectedList[user]]["currentCredits"] += userCredits
-			if userList[connectedList[user]]["currentCredits"] > userList[connectedList[user]]["maxCredits"]:
-				userList[connectedList[user]]["maxCredits"] = userList[connectedList[user]]["currentCredits"]
-				sharedNetworkInfo["userMaxCreds"][IDtoAlais[user]] = userList[connectedList[user]]["maxCredits"]
-			server_message(user, "sys", "Credit income: " + str(userCredits))
-			
-			# Processing user modes
-			process_user_mode(user)
-			
-			# Incrementing users active cycles
-			userList[connectedList[user]]["activeCycles"] += 1
-			
-			# Updating each users userInfo
-			rpc_id(user, "update_userInfo", userList[connectedList[user]].duplicate())
+			else:
+				# Giving out the moolah
+				award_credits(user, cycleCredits)
+				
+				# Processing user modes
+				process_user_mode(user)
+				
+				# Incrementing users active cycles
+				userList[connectedList[user]]["activeCycles"] += 1
+				
+				# Updating each users userInfo
+				rpc_id(user, "update_userInfo", userList[connectedList[user]].duplicate())
 		
 		# Processing user cycle actions
 		for userAlias in sharedNetworkInfo["processOrder"]:
 			# Skipping player if on skiplist
 			if skipList.has(userAlias):
-				return
+				pass
 			
-			var userID = aliasToID[userAlias]
-			var uname = connectedList[userID]
-			# Checking if user has added any actions
-			if not userList[uname]["cycleActions"].empty():
-				# Process action then remove from array
-				process_action_server(userList[uname]["cycleActions"][0], userID)
-				userList[uname]["cycleActions"].pop_front()
+			else:
+				var userID = aliasToID[userAlias]
+				var uname = connectedList[userID]
+				# Checking if user has added any actions
+				if not userList[uname]["cycleActions"].empty():
+					# Process action then remove from array
+					process_action_server(userList[uname]["cycleActions"][0], userID)
+					userList[uname]["cycleActions"].pop_front()
 		
 		# Clearing network skiplist
 		skipList.clear()
@@ -207,6 +205,11 @@ func attack_outcome(defAlias, attID, attackType):
 			# Increase defenders ddos level
 			userList[connectedList[defID]]["ddosLevel"] += 5
 	
+	# Attack failed
+	else:
+		server_message(attID, "sys", attackType + " attempt on " + defAlias + " failed.")
+		rpc_id(attID, "log_activity", attackType, defAlias, "fail")
+	
 	return outcome
 
 func attempt_hackWallet(targetAlias, attemptUserID):
@@ -252,11 +255,6 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 		server_message(attemptUserID, "sys", targetAlias + " succesfully hacked for " + str(hackAmount) + " credits!")
 		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "success", "Hack amount: " + str(hackAmount))
 		rpc_id(attemptUserID, "update_userInfo", userList[connectedList[attemptUserID]].duplicate())
-		
-	# Attack failed
-	else:
-		server_message(attemptUserID, "sys", "Failed to hack wallet of " + targetAlias)
-		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "fail")
 
 func autosave_network(interval):
 # Sets up and starts network autosave timer
@@ -265,6 +263,18 @@ func autosave_network(interval):
 	saveTimer.wait_time = interval
 	saveTimer.connect("timeout", self, "_autosave_timeout")
 	saveTimer.start()
+
+func award_credits(user, cycleCredits):
+	# Awarding credits
+	var userCredits = int(cycleCredits * log(userList[connectedList[user]]["creditMult"]))
+	userList[connectedList[user]]["currentCredits"] += userCredits
+	
+	# Update users max credits if new credit high
+	if userList[connectedList[user]]["currentCredits"] > userList[connectedList[user]]["maxCredits"]:
+		userList[connectedList[user]]["maxCredits"] = userList[connectedList[user]]["currentCredits"]
+		sharedNetworkInfo["userMaxCreds"][IDtoAlais[user]] = userList[connectedList[user]]["maxCredits"]
+	
+	server_message(user, "sys", "Credit income: " + str(userCredits))
 
 remote func ban_user(banAlias):
 # Remote admin function for banning a player
@@ -312,7 +322,8 @@ remote func buy_item(item, quantity, userID):
 
 	# Only run on server
 	if get_tree().is_network_server():
-		var total = shopItems[item] * quantity
+		var userTax = int(userList[userID]["maxCredits"] * (float(networkInfo["shopTax"]) / 100))
+		var total = (shopItems[item] + userTax) * quantity
 		
 		# Check if user has enough for purchase
 		if userList[connectedList[userID]]["currentCredits"] < total:
@@ -429,6 +440,7 @@ func create_dedicated_network():
 	autosave_network(networkInfo["autosaveInterval"])
 	sharedNetworkInfo["networkName"] = networkInfo["networkName"]
 	sharedNetworkInfo["messageLog"] = messageLog.duplicate()
+	sharedNetworkInfo["shopTax"] = networkInfo["shopTax"]
 	cycleTimer = Timer.new()
 	add_child(cycleTimer)
 	cycleTimer.wait_time = networkInfo["cycleDuration"]
@@ -439,21 +451,21 @@ func create_userInfo(userName, password):
 # with default user values
 
 	userList[userName] = {}
-	userList[userName]["userName"] = userName
-	userList[userName]["userPass"] = password
-	userList[userName]["currentCredits"] = 100
-	userList[userName]["creditMult"] = 1.0
+	userList[userName]["activeCycles"] = 0
 	userList[userName]["attack"] = 1.0
+	userList[userName]["creditMult"] = 1.0
+	userList[userName]["currentCredits"] = 100
+	userList[userName]["cycleActions"] = []
+	userList[userName]["ddosLevel"] = 0
 	userList[userName]["defense"] = 1.0
+	userList[userName]["firewallLevel"] = 0
+	userList[userName]["hackModifier"] = {}
+	userList[userName]["inventory"] = emptyInventory.duplicate()
 	userList[userName]["maxCredits"] = 100
 	userList[userName]["processMode"] = "balanced"
-	userList[userName]["cycleActions"] = []
-	userList[userName]["activeCycles"] = 0
-	userList[userName]["firewallLevel"] = 0
-	userList[userName]["inventory"] = emptyInventory.duplicate()
 	userList[userName]["traceRoute"] = 0
-	userList[userName]["hackModifier"] = {}
-	userList[userName]["ddosLevel"] = 0
+	userList[userName]["userName"] = userName
+	userList[userName]["userPass"] = password
 
 remote func execute_item(item, userID):
 # Called by client wanting to execute an item.
@@ -496,8 +508,11 @@ func force_skip(targetUser, userID):
 # Handles the forceSkip action. Adding the target to the network skipList
 # Target will not be awarded credits, stats, or have their cycle action 
 # be executed for one cycle
-	server_message(userID, "sys", str(targetUser) + " will be skipped next cycle")
-	skipList.append(targetUser)
+
+	# Check if user succesfully attacks
+	if attack_outcome(targetUser, userID, "forceSkip"):
+		server_message(userID, "sys", str(targetUser) + " will be skipped next cycle")
+		skipList.append(targetUser)
 
 remote func fortify_firewall(userID):
 # Increase the level of the users firewall
@@ -670,6 +685,14 @@ func process_user_mode(user):
 		userList[connectedList[user]]["defense"] += .05
 		userList[connectedList[user]]["creditMult"] += .2
 
+remote func remote_shutdown():
+# Remote admin function to shut down the game server
+	var senderID = get_tree().get_rpc_sender_id()
+	if check_admin(senderID):
+		shutdown()
+	else:
+		server_message(senderID, "notice", "No admin rights")
+
 remote func remote_start():
 # Remote admin function to force the game to start
 	var senderID = get_tree().get_rpc_sender_id()
@@ -738,6 +761,12 @@ func shuffle_process(userID):
 	server_message(userID, "sys", "Suffling process order")
 	sharedNetworkInfo["processOrder"].shuffle()
 
+func shutdown():
+# Saves game and closes the server
+	save_network()
+	get_tree().network_peer = null
+	get_tree().quit()
+
 func start_game(startMessage):
 # Called when sufficient users are connected, starts the game cycle mechanics
 
@@ -783,6 +812,54 @@ func stop_game(stopMessage):
 	
 	if dedicated:
 		print("Game stopped")
+
+remote func transfer_credits(command):
+# Called by users to transfer credits from themselves to another user
+# Expected command format: ["/transfer", "targetAlias", "amount"]
+
+	var senderID = get_tree().get_rpc_sender_id()
+	var senderUname = connectedList[senderID]
+	var targetUname = ""
+	
+	# Check for all arguments
+	if command.size() < 3:
+		server_message(senderID, "sys", "Transfer failed, invalid syntax")
+	
+	# Check for valid target
+	elif not aliasToID.has(command[1]):
+		server_message(senderID, "sys", "Transfer failed, user not connected: " + command[1])
+	
+	# Check for valid transfer amount
+	elif not command[2].is_valid_integer():
+		server_message(senderID, "sys", "Transfer failed, invalid amount: " + command[2])
+	
+	# Check that user has enough credits
+	elif userList[connectedList[senderID]]["currentCredits"] < int(command[2]):
+		server_message(senderID, "sys", "Transfer failed, insufficient credits")
+	
+	# All checks passed, transfering credits
+	else:
+		targetUname = connectedList[aliasToID[command[1]]]
+		
+		userList[senderUname]["currentCredits"] -= int(command[2])
+		userList[targetUname]["currentCredits"] += int(command[2])
+		
+		# If target has new max credits
+		if userList[targetUname]["maxCredits"] < userList[targetUname]["currentCredits"]:
+			userList[targetUname]["maxCredits"] = userList[targetUname]["currentCredits"]
+			
+			# Updating sharedNetwork info for all users
+			sharedNetworkInfo["userMaxCreds"][command[1]] = userList[targetUname]["maxCredits"]
+			rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
+		
+		# Update both users userInfo
+		rpc_id(senderID, "update_userInfo", userList[senderUname].duplicate())
+		rpc_id(aliasToID[command[1]], "update_userInfo", userList[targetUname].duplicate())
+		
+		# Notifying both users
+		server_message(senderID, "sys", "Credits transfered to " + command[1] + ": " + command[2])
+		server_message(aliasToID[command[1]], "sys", "Received " + command[2] + " credits from " + IDtoAlais[senderID])
+
 
 remote func update_alias(alias, oldAlias, ID):
 # Currently disabled command, allowed user to change alias during game

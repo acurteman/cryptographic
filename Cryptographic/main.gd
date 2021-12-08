@@ -4,6 +4,7 @@ var activityLog = [] # Stores list of recent activities and results
 var adminCommands = {
 	"/ban": "<alias> Bans user from the server",
 	"/kick": "<alias> Kicks user from the server",
+	"/shutdown": "Shuts down the game server",
 	"/startgame": "Forces the game to start",
 	"/stopgame": "Forces the game to stop"}
 var commandList = {
@@ -19,6 +20,7 @@ var commandList = {
 	"/resetpass": "Reset your password to the default network password",
 	"/setmode": "<mode> Set your current process mode",
 	"/shoplist": "Show a list of items to buy",
+	"/transfer": "<target> <amount> Transfer credits to another user",
 	"/w": "<username> <message> Send whisper to another user"}
 var cycleActionList = {
 	"forceSkip": "Force the network to skip a user on the next cycle",
@@ -62,7 +64,9 @@ var sharedNetworkInfo = {
 	"networkName":"temp",
 	"messageLog": [],
 	"connectedUsers": {},
-	"processOrder": []}
+	"processOrder": [],
+	"shopTax" : 5,
+	"userMaxCreds": {}}
 var shopItems = {
 	"changeAlias": 250,
 	"forceSkip": 150,
@@ -73,7 +77,7 @@ var shopItems = {
 var userInfo = {}
 var userPass = ""
 var userScript = []
-var version = "0.0.1"
+var version = "0.0.2"
 
 func _ready():
 	#$helpBox.popup()
@@ -634,15 +638,23 @@ func process_command(newCommand):
 	
 	# Check if entered command was an admin command
 	if adminCommands.has(command[0]):
+		# Kick then block a user from returning
 		if command[0] == "/ban":
 			rpc_id(1, "bad_user", command[1])
 		
+		# Kick a user from the network
 		elif command[0] == "/kick":
 			rpc_id(1, "kick_alias", command[1])
 		
+		# Shut down the game server
+		elif command[0] == "/shutdown":
+			rpc_id(1, "remote_shutdown")
+		
+		# Force start the game
 		elif command[0] == "/startgame":
 			rpc_id(1, "remote_start")
 	
+		# Force stop the game
 		elif command[0] == "/stopgame":
 			rpc_id(1, "remote_stop")
 	
@@ -650,60 +662,81 @@ func process_command(newCommand):
 	elif not commandList.has(command[0]):
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
 	
+	# Buy an item
 	elif command[0] == "/buy":
 		check_buy(command)
 	
+	# Change your user color
 	elif command[0] == "/changecolor":
 		change_color(command)
 	
+	# Change your password
 	elif command[0] == "/changepass":
 		rpc_id(1, "change_password", command)
 	
+	# Add a command to be executed at the end of a cycle
 	elif command[0] == "/cycle":
 		add_cycle_action(command)
 	
+	# List commands that can be executed as cycle actions
 	elif command[0] == "/cyclelist":
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Actions: ")
 		for item in cycleActionList:
 			$tabs/Messages/messageBox.append_bbcode(item + ": " + cycleActionList[item])
 			$tabs/Messages/messageBox.newline()
 	
+	# Execute an item you have purchased
 	elif command[0] == "/exec":
 		check_execute(command)
 	
+	# List all available commands
 	elif command[0] == "/help":
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
 		for item in commandList:
 			$tabs/Messages/messageBox.append_bbcode(item + ": " + commandList[item])
 			$tabs/Messages/messageBox.newline()
 	
+	# List all the items you currently own
 	elif command[0] == "/inv":
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Inventory: ")
 		for item in userInfo["inventory"]:
 			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(userInfo["inventory"][item]))
 			$tabs/Messages/messageBox.newline()
 	
+	# List the different types of cycle modes you can choose from
 	elif command[0] == "/listmodes":
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Cycle Modes: ")
 		for mode in processModes:
 			$tabs/Messages/messageBox.append_bbcode(mode + ": " + processModes[mode])
 			$tabs/Messages/messageBox.newline()
 	
+	# Change your password back to the default network password
 	elif command[0] == "/resetpass":
 		# SAME AS /STARTGAME, NEED TO CREATE SOME SORT OF ADMIN STATUS FOR USERS FOR THIS TO
 		# WORK AS INTENDED
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently borked')
 		#reset_password(command)
 	
+	# Change your cycle mode
 	elif command[0] == "/setmode":
 		set_mode(command)
 	
+	# List items that can be purchases along with prices
 	elif command[0] == "/shoplist":
+		# Calculating tax added to purchase
+		var userTax = int(userInfo["maxCredits"] * (float(sharedNetworkInfo["shopTax"]) / 100))
+		
+		# Printing shop items and prices with tax
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Items: ")
 		for item in shopItems:
-			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(shopItems[item]))
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + str(shopItems[item] + userTax))
 			$tabs/Messages/messageBox.newline()
 	
+	# Transfer credits to another user
+	elif command[0] == "/transfer":
+		rpc_id(1, "transfer_credits", command)
+	
+	# Send a whisper to another user
 	elif command[0] == "/w":
 		# /w [userAlias] [message]
 		send_whisper(command)
