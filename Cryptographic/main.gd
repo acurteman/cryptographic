@@ -19,6 +19,7 @@ var commandList = {
 	"/inv": "Show current inventory",
 	"/listmodes": "Show a list of process modes",
 	"/resetpass": "Reset your password to the default network password",
+	"/rtd": "<amount> Roll the dice and gamble your credits",
 	"/setmode": "<mode> Set your current process mode",
 	"/shoplist": "Show a list of items to buy",
 	"/transfer": "<target> <amount> Transfer credits to another user",
@@ -723,6 +724,10 @@ func process_command(newCommand):
 		# WORK AS INTENDED
 		update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Command currently borked')
 		#reset_password(command)
+	
+	# RTD
+	elif command[0] == "/rtd":
+		rpc_id(1, "rtd", command)
 	
 	# Change your cycle mode
 	elif command[0] == "/setmode":

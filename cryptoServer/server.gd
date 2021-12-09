@@ -813,6 +813,73 @@ remote func remote_stop():
 	else:
 		server_message(senderID, "notice", "No admin rights")
 
+remote func rtd(command):
+# Called by client when executing the /rtd command
+# Simulated rolling a d20 and gambling credits based on the outcome.
+# 1 = crit fail and lose all, 2-9 fail and lose a percentage, 
+# 10 is win nothing lose nothing, 11-19 win gain percentage, 20 crit win and double money
+	
+	var userID = get_tree().get_rpc_sender_id()
+	var userName = connectedList[userID]
+	
+	# Check for valid syntax
+	if command.size() < 2:
+		server_message(userID, "sys", "Invalid RTD syntax")
+	
+	# Check for valid credit amount
+	elif not command[1].is_valid_integer():
+		server_message(userID, "sys", "Invalid RTD amount: " + command[1])
+	
+	# Check that user has sufficient credits
+	elif userList[userName]["currentCredits"] < int(command[1]):
+		server_message(userID, "sys", "Insufficient credits for RTD")
+	
+	# Checks passed, roll the dice!
+	else:
+		var roll = rng.randi_range(1, 20)
+		
+		# Announce roll to connected users
+		rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", IDtoAlais[userID] + 
+		" rolled the dice and got a " + str(roll) + "!")
+		
+		# Crit fail
+		if roll == 1:
+			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", "Crit fail! " + 
+			IDtoAlais[userID] + " lost all " + command[1] + " credits!") 
+			userList[userName]["currentCredits"] -= int(command[1])
+			rpc_id(userID, "update_userInfo", userList[userName].duplicate())
+		
+		# Crit win
+		elif roll == 20:
+			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", "Crit win! " + 
+			IDtoAlais[userID] + " doubled their " + command[1] + " credits!") 
+			userList[userName]["currentCredits"] += int(command[1])
+			rpc_id(userID, "update_userInfo", userList[userName].duplicate())
+		
+		# Nothing happens
+		elif roll == 10:
+			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", "Nothing happened to " + 
+			IDtoAlais[userID] + "'s " + command[1] + " credits.") 
+		
+		# Win some or lose some
+		else:
+			var multiply = float(roll) / 10
+			var winnings = int(int(command[1]) * multiply)
+			
+			# Lose some
+			if multiply < 1:
+				rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", IDtoAlais[userID] + 
+				" lost " + str(winnings) + " credits.") 
+				userList[userName]["currentCredits"] -= winnings
+				rpc_id(userID, "update_userInfo", userList[userName].duplicate())
+			
+			# Win some
+			else:
+				rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", IDtoAlais[userID] + 
+				" won " + str(winnings) + " credits.") 
+				userList[userName]["currentCredits"] += winnings
+				rpc_id(userID, "update_userInfo", userList[userName].duplicate())
+
 func save_network():
 	# First saving networkInfo to a text file
 	var netInfoFile = File.new()
