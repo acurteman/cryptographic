@@ -108,6 +108,8 @@ External scripts should be formatted in .csv files. The first line should contai
     - "hackWallet": "Attempt to steal credits from another users wallet"
 
     - "shuffleProc": "Shuffle the process order list"
+
+    - "stealID": "Attempt to swap aliases with another user"
 	
     - "traceRoute": "Log information of anyone who breaches your network"
 
@@ -254,6 +256,26 @@ External scripts should be formatted in .csv files. The first line should contai
     - "processOrder": Array, current order that user commands will be executed. Values are user aliases
 
     - "userMaxCreds": Dictionary, contains connected users high scores, keys are aliases, values are high scores
+
+### shopList: Dictionary
+
+- Contains all the items available to buy. Keys are item names, values are item prices
+
+- Dictionary contents:
+
+    - "changeAlias": 250,
+
+	- "forceSkip": 150,
+
+	- "fortFirewall": 50,
+
+	- "hackWallet": 100,
+
+	- "shuffleProc": 15,
+
+	- "stealID": 300,
+    
+	- "traceRoute": 75
 
 ### skipList: Array
 

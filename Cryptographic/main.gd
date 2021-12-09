@@ -27,6 +27,7 @@ var cycleActionList = {
 	"fortFirewall": "Fortify your firewall, which will prevent one succesfull attack",
 	"hackWallet": "Attempt to steal credits from another users wallet",
 	"shuffleProc": "Shuffle the process order list",
+	"stealID": "Attempt to swap aliases with another user",
 	"traceRoute": "Log information of anyone who breaches your network"}
 var cycleScript = false
 var editPopup
@@ -73,6 +74,7 @@ var shopItems = {
 	"fortFirewall": 50,
 	"hackWallet": 100,
 	"shuffleProc": 15,
+	"stealID": 300,
 	"traceRoute": 75}
 var userInfo = {}
 var userPass = ""

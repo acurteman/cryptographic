@@ -44,6 +44,7 @@ var shopItems = {
 	"fortFirewall": 50,
 	"hackWallet": 100,
 	"shuffleProc": 15,
+	"stealID": 300,
 	"traceRoute": 75}
 var skipList = []
 var userList = {} # Saves user data on the network, keys are user names
@@ -171,7 +172,7 @@ func attack_outcome(defAlias, attID, attackType):
 	var def = userList[connectedList[defID]]["defense"]
 	var att = userList[connectedList[attID]]["attack"]
 	
-	# Check for attack modifiers
+	# Check if the attacker has an attack bonus vs the defender
 	if userList[connectedList[attID]]["hackModifier"].has(connectedList[defID]):
 		att += userList[connectedList[attID]]["hackModifier"][connectedList[defID]]
 	
@@ -180,7 +181,7 @@ func attack_outcome(defAlias, attID, attackType):
 	
 	# Attempt attack
 	if rng.randf_range(0, def + att) <= att:
-		# If defender has sufficient ddos level
+		# Check if defender has high ddos level
 		if userList[connectedList[defID]]["ddosLevel"] > networkInfo["ddosThreshold"]:
 			server_message(attID, "sys", "Hack stopped by network DDOS protection")
 			rpc_id(attID, "log_activity", attackType, defAlias, "fail", "Hack stopped by DDOS protection!")
@@ -256,6 +257,21 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "success", "Hack amount: " + str(hackAmount))
 		rpc_id(attemptUserID, "update_userInfo", userList[connectedList[attemptUserID]].duplicate())
 
+func attempt_stealID(target, userID):
+# Called when user attempts a stealID hack
+# If successful, swaps the aliases of the two users
+	if attack_outcome(target, userID, "stealID"):
+		var attAlias = IDtoAlais[userID]
+		var defID = aliasToID[target]
+		
+		# Briefly changing the defenders alias to ERROR, 
+		# to avoid having two users with the same name momentarily
+		change_alias("ERROR", defID)
+		
+		# Swapping user aliases
+		change_alias(target, userID)
+		change_alias(attAlias, defID)
+
 func autosave_network(interval):
 # Sets up and starts network autosave timer
 	saveTimer = Timer.new()
@@ -322,23 +338,25 @@ remote func buy_item(item, quantity, userID):
 
 	# Only run on server
 	if get_tree().is_network_server():
-		var userTax = int(userList[userID]["maxCredits"] * (float(networkInfo["shopTax"]) / 100))
+		var userName = connectedList[userID]
+		var userTax = int(userList[userName]["maxCredits"] * (float(networkInfo["shopTax"]) / 100))
 		var total = (shopItems[item] + userTax) * quantity
 		
 		# Check if user has enough for purchase
-		if userList[connectedList[userID]]["currentCredits"] < total:
+		if userList[userName]["currentCredits"] < total:
 			server_message(userID, "sys", "Insufficient credits for purchase")
 		
 		# Make purchase
 		else:
-			userList[connectedList[userID]]["currentCredits"] -= total
-			userList[connectedList[userID]]["inventory"][item] += quantity
+			userList[userName]["currentCredits"] -= total
+			userList[userName]["inventory"][item] += quantity
 			server_message(userID, "sys", "Purchase successful")
-			rpc_id(userID, "update_userInfo", userList[connectedList[userID]].duplicate())
+			rpc_id(userID, "update_userInfo", userList[userName].duplicate())
 
 func change_alias(newAlias, userID):
 # Called when user executes a changeAlias item
 # Replaces old alias with a new one for the user
+# Also used by stealID hack to swap aliases
 
 	# Check that alias is not already in use
 	var checkedAlias = check_alias(newAlias, userID)
@@ -501,6 +519,9 @@ remote func execute_item(item, userID):
 		elif item[0] == "shuffleProc":
 			shuffle_process(userID)
 			
+		elif item[0] == "stealID":
+			attempt_stealID(item[1], userID)
+		
 		elif item[0] == "traceRoute":
 			init_traceRoute(userID)
 
@@ -661,6 +682,9 @@ func process_action_server(action, userID):
 	elif action[0] == "shuffleProc":
 		shuffle_process(userID)
 		
+	elif action[0] == "stealID":
+		attempt_stealID(action[1], userID)
+	
 	elif action[0] == "traceRoute":
 		init_traceRoute(userID)
 
