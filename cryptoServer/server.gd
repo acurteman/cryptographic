@@ -2,7 +2,9 @@ extends Node
 
 var aliasToID = {} # List of users with alias's as keys and ID's as values
 var connectedList = {} # List of connected users, keys are ID's, values are usernames
+var connectedList2 = {} # Reverse of connected list, keys are usernames, values are ID's
 var cycleTimer
+var depositList = []
 var ddosTimer
 var dedicated = false
 var emptyInventory = {
@@ -19,6 +21,7 @@ var messageLog = []
 var networkInfo = {
 	"adminList": "",
 	"autosaveInterval": 10,
+	"bankInterest": 2,
 	"banList": "",
 	"baseCredits": 10,
 	"cycleDuration": 10,
@@ -122,6 +125,7 @@ func _process_cycle():
 		
 		# Let users know a new cycle has started
 		rpc("new_cycle")
+		server_new_cycle()
 
 func activate_traceRoute(userID, tracedID):
 # Alerts user if their traceRoute is activated, then gives them an attack bonus vs traced user
@@ -146,6 +150,7 @@ func add_user(ID, userName, alias):
 	if dedicated:
 		print(userName + " connected")
 	connectedList[ID] = userName
+	connectedList2[userName] = ID
 	sharedNetworkInfo["connectedUsers"][alias] = ID
 	sharedNetworkInfo["userMaxCreds"][alias] = userList[userName]["maxCredits"]
 	sharedNetworkInfo["processOrder"].append(alias)
@@ -222,40 +227,34 @@ func attempt_hackWallet(targetAlias, attemptUserID):
 		server_message(attemptUserID, "sys", "hackWallet failed. " + targetAlias + " not connected.")
 		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "fail", "User not connected")
 	
-	# Checking for self hack
-	if targetAlias == IDtoAlais[attemptUserID]:
-		server_message(attemptUserID, "sys", "hackWallet failed. Self hacks not allowed.")
-		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "fail", "Self hacks not allowed")
-		return
-	
 	server_message(attemptUserID, "sys", "Attempting to hack the wallet of " + targetAlias)
 	
 	# If attack is successful
 	if attack_outcome(targetAlias, attemptUserID, "hackWallet"):
 		var defID = aliasToID[targetAlias]
-			
+		var attUname = connectedList[attemptUserID]
+		var defUname = connectedList[defID]
+		
 		# Determine how much is stolen, random between 5-15%
 		var hackPct = rng.randf_range(0.05, 0.15)
-		var hackAmount = int(round(userList[connectedList[defID]]["currentCredits"] * hackPct))
+		var hackAmount = int(round(userList[defUname]["currentCredits"] * hackPct))
 			
 		# Subtract funds and notify defender
-		userList[connectedList[defID]]["currentCredits"] -= hackAmount
+		userList[defUname["currentCredits"]] -= hackAmount
 		server_message(defID, "sys", "ALERT! Wallet was succesfully hacked for " + str(hackAmount) + " credits!")
 		rpc_id(defID, "log_activity", "Wallet Hacked", "self", "", "Hack amount: " + str(hackAmount))
-		rpc_id(defID, "update_userInfo", userList[connectedList[defID]].duplicate())
+		rpc_id(defID, "update_userInfo", userList[defUname].duplicate())
 		
 		# Add funds to attacker
-		userList[connectedList[attemptUserID]]["currentCredits"] += hackAmount
+		userList[attUname]["currentCredits"] += hackAmount
 		
 		# Check max creds for attacker
-		if userList[connectedList[attemptUserID]]["currentCredits"] > userList[connectedList[attemptUserID]]["maxCredits"]:
-			userList[connectedList[attemptUserID]]["maxCredits"] = userList[connectedList[attemptUserID]]["currentCredits"]
-			sharedNetworkInfo["userMaxCreds"][IDtoAlais[attemptUserID]] = userList[connectedList[attemptUserID]]["maxCredits"]
+		check_maxCredits(attUname)
 		
 		# Notify and update attacker
 		server_message(attemptUserID, "sys", targetAlias + " succesfully hacked for " + str(hackAmount) + " credits!")
 		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "success", "Hack amount: " + str(hackAmount))
-		rpc_id(attemptUserID, "update_userInfo", userList[connectedList[attemptUserID]].duplicate())
+		rpc_id(attemptUserID, "update_userInfo", userList[attUname].duplicate())
 
 func attempt_stealID(target, userID):
 # Called when user attempts a stealID hack
@@ -320,6 +319,37 @@ remote func ban_user(banAlias):
 	
 	else:
 		server_message(senderID, "notice", "No admin rights")
+
+remote func bank_credits(command):
+# Called by users wanting to bank credits for a specified duration, earning interest.
+# Expected command format ["/bank", "amount", "duration"]
+	
+	var userID = get_tree().get_rpc_sender_id()
+	var userName = connectedList[userID]
+	
+	# Check for valid syntax
+	if not command.size() == 3:
+		server_message(userID, "sys", "Invalid syntax for bank command")
+	
+	# Check for valid arguments
+	elif not command[1].is_valid_integer():
+		server_message(userID, "sys", "Invalid credit amount: " + command[1])
+	elif not command[2].is_valid_integer():
+		server_message(userID, "sys", "Invalid bank duration: " + command[2])
+	
+	# Check that user has suffiecient credits
+	elif userList[userName]["currentCredits"] < int(command[1]):
+		server_message(userID, "sys", "Insufficient credits for bank deposit")
+	
+	# All checks passed, deposit credits
+	else:
+		userList[userName]["currentCredits"] -= int(command[1])
+		var deposit = [userName, int(command[1]), int(command[2])]
+		depositList.append(deposit)
+		
+		# Update user
+		server_message(userID, "sys", "Deposit successful, " + command[1] + " credits stored for " + command[2] + " cycles.")
+		rpc_id(userID, "update_userInfo", userList[userName].duplicate())
 
 remote func broadcast_message(messageType, curTime, color, name, newText):
 # Used as the main method of sending messages between users
@@ -432,6 +462,25 @@ func check_alias(alias, senderID):
 			newAlias = alias + str(aliasNum)
 		rpc_id(senderID, "client_update_alias", newAlias)
 		return(newAlias)
+
+func check_maxCredits(userName):
+# Performs a check to see if a users current credits are greater
+# than their maxCredits. If so, updates maxCredits accordingly
+	
+	# If current credits > max credits, update
+	if userList[userName]["currentCredits"] > userList[userName]["maxCredits"]:
+		# Update userList
+		userList[userName]["maxCredits"] = userList[userName]["currentCredits"]
+		
+		# Check if user is still connected
+		if connectedList2.has(userName):
+			# Send updates to user
+			rpc_id(connectedList2[userName], "update_userInfo", userList[userName].duplicate())
+			
+			# Update sharedNetworkInfo
+			var userAlias = IDtoAlais[connectedList2[userName]]
+			sharedNetworkInfo["userMaxCreds"][userAlias] = userList[userName]["maxCredits"]
+			rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 
 func check_target(action, targetAlias, userID):
 	if not sharedNetworkInfo["connectedUsers"].has(targetAlias):
@@ -688,6 +737,37 @@ func process_action_server(action, userID):
 	elif action[0] == "traceRoute":
 		init_traceRoute(userID)
 
+func process_deposits():
+# Called at the start of a cycle if there are deposits in the depositList
+# Adds interest to deposits, and returns to user if duration is complete
+
+	# Loop through every deposit, either returning credits or adding interest
+	for i in range(0, depositList.size()):
+			# If duration is 0, deposit is complete, return credits to user
+			if depositList[i][2] == 0:
+				# Check if user still connected
+				if connectedList2.has(depositList[i][0]):
+					# Only complete a deposit and return credits if user is connected
+					userList[depositList[i][0]]["currentCredits"] += depositList[i][1]
+					check_maxCredits(depositList[i][0])
+					rpc_id(connectedList2[depositList[i][0]], "update_userInfo", userList[depositList[i][0]].duplicate())
+					server_message(connectedList2[depositList[i][0]], "sys", "Bank deposit complete, earnings: " + str(depositList[i][1]))
+					depositList[i][2] -= 1
+			
+			# If duration is greater than 0, add interest to deposit and decrease duration by 1
+			else:
+				depositList[i][1] += int((depositList[i][1]) * (float(networkInfo["bankInterest"]) / 100))
+				depositList[i][2] -= 1
+		
+	# Checking for and removing any returned deposits
+	var newList = []
+	for deposit in depositList:
+		# Finished deposits should have a duration of -1, so they
+		# should not get copied to the new list
+		if deposit[2] >= 0:
+			newList.append(deposit)
+	depositList = newList.duplicate()
+
 func process_user_mode(user):
 	if userList[connectedList[user]]["processMode"] == "balanced":
 		userList[connectedList[user]]["attack"] += .1
@@ -766,6 +846,14 @@ remotesync func send_message(_messageType, curTime, color, name, newText):
 func server_message(targetID, messageType, message):
 # Server function
 	rpc_id(targetID, "update_message", messageType, OS.get_datetime(), "silver", "SERVER", message)
+
+func server_new_cycle():
+# Called at the end of every cycle so the server can process tasks which
+# need to occur once at the start of each new cycle
+
+	# Check for bank deposits and process
+	if depositList.size() > 0:
+		process_deposits()
 
 remote func set_cycle_action(senderID, command):
 # Adds users cycle action to their cyclaActions array
@@ -884,7 +972,6 @@ remote func transfer_credits(command):
 		server_message(senderID, "sys", "Credits transfered to " + command[1] + ": " + command[2])
 		server_message(aliasToID[command[1]], "sys", "Received " + command[2] + " credits from " + IDtoAlais[senderID])
 
-
 remote func update_alias(alias, oldAlias, ID):
 # Currently disabled command, allowed user to change alias during game
 # Need to make item to handle instead, so user can't change alias for free
@@ -914,6 +1001,7 @@ func user_left(ID):
 				print(connectedList[ID] + " disconnected")
 			var discAlias = IDtoAlais[ID]
 			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", IDtoAlais[ID] + " disconnected")
+			connectedList2.erase(connectedList[ID])
 			connectedList.erase(ID) # remove  from connectedList
 			aliasToID.erase(discAlias)
 			IDtoAlais.erase(ID)

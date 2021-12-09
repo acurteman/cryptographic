@@ -61,6 +61,8 @@ External scripts should be formatted in .csv files. The first line should contai
 
 - Commands:
 
+    - "/bank": "< amount > < duration > Bank credits for a specified number of cycles, earning interest."
+
 	- "/buy": "< item name> < quanitity> Purchase an item",
 	
     - "/changealias": "< newalias> Change your current alias",
@@ -120,6 +122,16 @@ External scripts should be formatted in .csv files. The first line should contai
 ### cycleScript: Bool
 
 - Client variable. Used to detrmine if user is waiting to execute a script once a new cycle starts. If set to true, the run_script function will be called at the start of the cycle
+
+### depositList: Array
+
+- Server variable, used to store user bank deposits. Each deposit is an array with the following format:
+
+    - Element 0: Username, string
+
+    - Element 1: Deposit amount, int
+
+    - Element 2: Deposit duration in number of cycles, int
 
 ### editPopup: Popup
 
@@ -257,7 +269,7 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "userMaxCreds": Dictionary, contains connected users high scores, keys are aliases, values are high scores
 
-### shopList: Dictionary
+### shopItems: Dictionary
 
 - Contains all the items available to buy. Keys are item names, values are item prices
 
@@ -274,7 +286,7 @@ External scripts should be formatted in .csv files. The first line should contai
 	- "shuffleProc": 15,
 
 	- "stealID": 300,
-    
+
 	- "traceRoute": 75
 
 ### skipList: Array

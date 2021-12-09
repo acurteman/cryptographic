@@ -8,6 +8,7 @@ var adminCommands = {
 	"/startgame": "Forces the game to start",
 	"/stopgame": "Forces the game to stop"}
 var commandList = {
+	"/bank": "<amount> <duration> Bank credits for a specified number of cycles, earning interest.",
 	"/buy": "<item name> <quanitity> Purchase an item",
 	"/changecolor": "<newcolor> Change your current color",
 	"/changepass": "<newpassword> Change your current password",
@@ -663,6 +664,10 @@ func process_command(newCommand):
 	# Check for valid user command
 	elif not commandList.has(command[0]):
 		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid command, type /help for a list of commands')
+	
+	# Bank credits
+	elif command[0] == "/bank":
+		rpc_id(1, "bank_credits", command)
 	
 	# Buy an item
 	elif command[0] == "/buy":
