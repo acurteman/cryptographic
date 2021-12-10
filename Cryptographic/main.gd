@@ -2,11 +2,14 @@ extends Control
 
 var activityLog = [] # Stores list of recent activities and results
 var adminCommands = {
-	"/ban": "<alias> Bans user from the server",
-	"/kick": "<alias> Kicks user from the server",
+	"/announce": "Broadcast message to all users from the server",
+	"/ban": "<username> Bans user from the server",
+	"/kick": "<username> Kicks user from the server",
+	"/resetgame": "Resets all game data",
 	"/shutdown": "Shuts down the game server",
 	"/startgame": "Forces the game to start",
-	"/stopgame": "Forces the game to stop"}
+	"/stopgame": "Forces the game to stop",
+	"/users": "View the usernames of connected users"}
 var commandList = {
 	"/bank": "<amount> <duration> Bank credits for a specified number of cycles, earning interest.",
 	"/buy": "<item name> <quanitity> Purchase an item",
@@ -642,13 +645,20 @@ func process_command(newCommand):
 	
 	# Check if entered command was an admin command
 	if adminCommands.has(command[0]):
+		# Make an announcment from the server
+		if command[0] == "/announce":
+			rpc_id(1, "announce", command)
+		
 		# Kick then block a user from returning
-		if command[0] == "/ban":
-			rpc_id(1, "bad_user", command[1])
+		elif command[0] == "/ban":
+			rpc_id(1, "ban_user", command[1])
 		
 		# Kick a user from the network
 		elif command[0] == "/kick":
-			rpc_id(1, "kick_alias", command[1])
+			rpc_id(1, "kick_user", command[1])
+		
+		elif command[0] == "/resetgame":
+			rpc_id(1, "reset_game")
 		
 		# Shut down the game server
 		elif command[0] == "/shutdown":
@@ -661,6 +671,10 @@ func process_command(newCommand):
 		# Force stop the game
 		elif command[0] == "/stopgame":
 			rpc_id(1, "remote_stop")
+		
+		# View list of username
+		elif command[0] == "/users":
+			rpc_id(1, "view_usernames")
 	
 	# Check for valid user command
 	elif not commandList.has(command[0]):

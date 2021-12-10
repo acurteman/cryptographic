@@ -51,6 +51,10 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - Element 4: String, Optional message
 
+### adminCommands: Dictionary
+
+- Client variable. Contains all commands that can be called by server admins, keys are commands, values are command descriptions
+
 ### aliasToID: Dictionary
 
 - Server variable. Dictionary of connected users, keys are user aliases, values are network IDs
@@ -178,6 +182,8 @@ External scripts should be formatted in .csv files. The first line should contai
     - "adminList": String, contains user names for users with admin rights. Names are comma seperated with no spaces.
 
     - "autosaveInterval": Int, duration between autosaves
+
+    - "bankInterest": Int, used as the percentage users earn on deposited credits
 
     - "banList": String, contains user names of banned users. Names are comma seperated with no spaces
 
@@ -326,6 +332,8 @@ External scripts should be formatted in .csv files. The first line should contai
             - fortFirewall
 
             - hackWallet
+
+    - "logoutTime": Int, unix time the user last logged out. Used to prevent users from rapid disconnect/reconnect
 
     - "maxCredits": Int, most credits a user has had at one time. Used as a high score
 

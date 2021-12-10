@@ -166,6 +166,23 @@ func add_user(ID, userName, alias):
 		if len(connectedList) >= networkInfo["minUsers"]:
 			start_game("Sufficient users connected, beginning game")
 
+remote func announce(command):
+# Called by admins to make an announcement message to connected users 
+	var senderID = get_tree().get_rpc_sender_id()
+	
+	# Check for admin rights
+	if check_admin(senderID):
+		# Check for empty announcment
+		if command.size() == 1:
+			pass
+		else:
+			# Put message together and send
+			var message = command[1]
+			for i in range(2, command.size()):
+				message += " " + command[i]
+			
+			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", message)
+
 func attack_outcome(defAlias, attID, attackType):
 # Calculates whether an attack is succesfull based on users attack
 # and defense stats, firewall status, and ddos protection.
@@ -291,20 +308,15 @@ func award_credits(user, cycleCredits):
 	
 	server_message(user, "sys", "Credit income: " + str(userCredits))
 
-remote func ban_user(banAlias):
+remote func ban_user(banUser):
 # Remote admin function for banning a player
 	var senderID = get_tree().get_rpc_sender_id()
-	var banUser
 
 	# Check for admin rights
 	if check_admin(senderID):
-		# Check for valid alias to ban
-		if aliasToID.has(banAlias):
-			# Getting the username of the alias
-			banUser = connectedList[aliasToID[banAlias]]
-		# Invalid alias
-		else:
-			server_message(senderID, "notice", "Invalid alias")
+		# Check for valid user to ban
+		if not connectedList2.has(banUser):
+			server_message(senderID, "notice", "Invalid user")
 			return
 		
 		# Add user to ban list
@@ -314,11 +326,7 @@ remote func ban_user(banAlias):
 			networkInfo["banList"] += ("," + banUser)
 		
 		# Kick user from server
-		rpc_id(aliasToID[banAlias], "remote_quit")
-#		print(connectedList[aliasToID[banAlias]] + " banned by admin")
-	
-	else:
-		server_message(senderID, "notice", "No admin rights")
+		rpc_id(connectedList2[banUser], "remote_quit")
 
 remote func bank_credits(command):
 # Called by users wanting to bank credits for a specified duration, earning interest.
@@ -443,6 +451,7 @@ func check_admin(userID):
 	if adminArray.has(connectedList[userID]):
 		return(true)
 	else:
+		server_message(userID, "notice", "No admin rights")
 		return(false)
 
 func check_alias(alias, senderID):
@@ -513,11 +522,16 @@ func create_dedicated_network():
 	cycleTimer.wait_time = networkInfo["cycleDuration"]
 	cycleTimer.connect("timeout", self, "_process_cycle")
 
-func create_userInfo(userName, password):
+func create_userInfo(userName, reset):
 # Called when a new user connects to server. Creates userList entry and populates
-# with default user values
-
-	userList[userName] = {}
+# with default user values. Also called by reset_game function to return user data
+# back to starting values
+	
+	# This keeps user passwords from getting reset during a game restart
+	if reset == false:
+		userList[userName] = {}
+		userList[userName]["userPass"] = networkInfo["netPass"]
+	
 	userList[userName]["activeCycles"] = 0
 	userList[userName]["attack"] = 1.0
 	userList[userName]["creditMult"] = 1.0
@@ -533,7 +547,6 @@ func create_userInfo(userName, password):
 	userList[userName]["processMode"] = "balanced"
 	userList[userName]["traceRoute"] = 0
 	userList[userName]["userName"] = userName
-	userList[userName]["userPass"] = password
 
 remote func execute_item(item, userID):
 # Called by client wanting to execute an item.
@@ -610,20 +623,18 @@ func init_traceRoute(userID):
 		rpc_id(userID, "log_activity", "Trace route added", "self")
 		rpc_id(userID, "update_userInfo", userList[connectedList[userID]].duplicate())
 
-remote func kick_alias(kickAlias):
+remote func kick_user(kickUser):
 # Remote admin function to kick a player from the network
 	
 	var senderID = get_tree().get_rpc_sender_id()
 	# Checking for admin rights
 	if check_admin(senderID):
 		# Checking for valid kickAlias
-		if aliasToID.has(kickAlias):
-			rpc_id(aliasToID[kickAlias], "remote_quit")
+		if connectedList2.has(kickUser):
+			rpc_id(connectedList2[kickUser], "remote_quit")
 #			print(connectedList[aliasToID[kickAlias]] + " kicked by admin")
 		else:
-			server_message(senderID, "notice", "Invalid alias")
-	else:
-		server_message(senderID, "notice", "No admin rights")
+			server_message(senderID, "notice", "Invalid user")
 
 func load_network():
 #	print("Loading network data")
@@ -703,7 +714,7 @@ remote func net_login(userName, password, alias, clientVersion):
 		# First time user
 		elif password == networkInfo["netPass"]:
 			# Login success for first time user
-			create_userInfo(userName, password)
+			create_userInfo(userName, false)
 			rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", userList[userName].duplicate())
 			rpc_id(get_tree().get_rpc_sender_id(), "update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 			rpc_id(get_tree().get_rpc_sender_id(), "login_success")
@@ -801,24 +812,36 @@ remote func remote_shutdown():
 	var senderID = get_tree().get_rpc_sender_id()
 	if check_admin(senderID):
 		shutdown()
-	else:
-		server_message(senderID, "notice", "No admin rights")
 
 remote func remote_start():
 # Remote admin function to force the game to start
 	var senderID = get_tree().get_rpc_sender_id()
 	if check_admin(senderID):
 		start_game("Game started by admin")
-	else:
-		server_message(senderID, "notice", "No admin rights")
 
 remote func remote_stop():
 # Remote admin function to force the game to stop
 	var senderID = get_tree().get_rpc_sender_id()
 	if check_admin(senderID):
 		stop_game("Game stopped by admin")
-	else:
-		server_message(senderID, "notice", "No admin rights")
+
+remote func reset_game():
+# Resets all userInfo data back to default starting values
+	var senderID = get_tree().get_rpc_sender_id()
+	# Check for admin rights
+	if check_admin(senderID):
+		# Notify users game is reseting
+		rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Game being reset by admin")
+		
+		# Reset userInfo and update users
+		for user in userList:
+			create_userInfo(user, true)
+			rpc_id(connectedList2[user], "update_userInfo", userList[user].duplicate())
+		
+		# Update sharedNetworkInfo
+		for alias in sharedNetworkInfo["userMaxCreds"]:
+			sharedNetworkInfo["userMaxCreds"][alias] = 100
+		rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 
 remote func rtd(command):
 # Called by client when executing the /rtd command
@@ -985,19 +1008,16 @@ func start_game(startMessage):
 
 func stop_game(stopMessage):
 # Called when too many users leave, stops the game cycle mechanics
-
+	
 	# Set game to not running
 	gameRunning = false
-
+	
 	# Stop game timers
 	cycleTimer.stop()
 	ddosTimer.stop()
 	
 	# Notify users
 	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", stopMessage)
-	
-	if dedicated:
-		print("Game stopped")
 
 remote func transfer_credits(command):
 # Called by users to transfer credits from themselves to another user
@@ -1090,3 +1110,15 @@ func user_left(ID):
 			rpc("refresh_statusBox")
 			if len(connectedList) == networkInfo["minUsers"] - 1:
 				stop_game("Insufficient users, game stopped")
+
+remote func view_usernames():
+# Called by admins to get a list of currently connected users by username
+# Needed to kick/ban users
+	var senderID = get_tree().get_rpc_sender_id()
+	
+	# Check for admin rights
+	if check_admin(senderID):
+		server_message(senderID, "notice", "Alias: Username")
+		for alias in aliasToID:
+			server_message(senderID, "notice", alias + ": " + connectedList[aliasToID[alias]])
+	
