@@ -56,7 +56,7 @@ var version = "0.0.2"
 func _ready():
 	dedicated = true
 	
-	print("Starting server...")
+#	print("Starting server...")
 	rng.randomize()
 	get_tree().connect("network_peer_disconnected",self,"user_left")
 	create_dedicated_network()
@@ -147,8 +147,8 @@ func add_user(ID, userName, alias):
 # and sends info to other connected users. If minimum players reached to start
 # game, the game is started.
 
-	if dedicated:
-		print(userName + " connected")
+#	if dedicated:
+#		print(userName + " connected")
 	connectedList[ID] = userName
 	connectedList2[userName] = ID
 	sharedNetworkInfo["connectedUsers"][alias] = ID
@@ -315,7 +315,7 @@ remote func ban_user(banAlias):
 		
 		# Kick user from server
 		rpc_id(aliasToID[banAlias], "remote_quit")
-		print(connectedList[aliasToID[banAlias]] + " banned by admin")
+#		print(connectedList[aliasToID[banAlias]] + " banned by admin")
 	
 	else:
 		server_message(senderID, "notice", "No admin rights")
@@ -496,7 +496,7 @@ func create_dedicated_network():
 	var server : NetworkedMultiplayerENet = NetworkedMultiplayerENet.new()
 	server.create_server(networkInfo["netPort"],MAX_PLAYERS)
 	get_tree().set_network_peer(server)
-	print("Server created")
+#	print("Server created")
 	
 	# Checking for saved network info
 	var netFile = File.new()
@@ -528,6 +528,7 @@ func create_userInfo(userName, password):
 	userList[userName]["firewallLevel"] = 0
 	userList[userName]["hackModifier"] = {}
 	userList[userName]["inventory"] = emptyInventory.duplicate()
+	userList[userName]["logoutTime"] = 0
 	userList[userName]["maxCredits"] = 100
 	userList[userName]["processMode"] = "balanced"
 	userList[userName]["traceRoute"] = 0
@@ -618,14 +619,14 @@ remote func kick_alias(kickAlias):
 		# Checking for valid kickAlias
 		if aliasToID.has(kickAlias):
 			rpc_id(aliasToID[kickAlias], "remote_quit")
-			print(connectedList[aliasToID[kickAlias]] + " kicked by admin")
+#			print(connectedList[aliasToID[kickAlias]] + " kicked by admin")
 		else:
 			server_message(senderID, "notice", "Invalid alias")
 	else:
 		server_message(senderID, "notice", "No admin rights")
 
 func load_network():
-	print("Loading network data")
+#	print("Loading network data")
 	
 	# Loading data in networkInfo.text
 	var netInfoFile = File.new()
@@ -662,7 +663,7 @@ func load_network():
 remote func net_login(userName, password, alias, clientVersion):
 # Called when user connected to server. Checks login credentials and handles success
 # or failuer to login
-	print("User attempting login")
+#	print("User attempting login")
 
 	var senderID = get_tree().get_rpc_sender_id()
 	var currentList = connectedList.values()
@@ -683,8 +684,14 @@ remote func net_login(userName, password, alias, clientVersion):
 		
 		# Checking if the user has logged in before
 		elif userList.has(userName): 
+			# Check that user hasn't logged out too recently
+			var timeLeft = OS.get_unix_time() - userList[userName]["logoutTime"]
+			if timeLeft < 60:
+				rpc_id(get_tree().get_rpc_sender_id(), "login_fail", "Please wait " + str(60 - timeLeft) +
+				 " more seconds before logging in again.")
+			
 			# Login success for returning user
-			if userList[userName]["userPass"] == password:
+			elif userList[userName]["userPass"] == password:
 				rpc_id(get_tree().get_rpc_sender_id(), "update_userInfo", userList[userName].duplicate())
 				rpc_id(get_tree().get_rpc_sender_id(), "update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 				rpc_id(get_tree().get_rpc_sender_id(), "login_success")
@@ -971,8 +978,8 @@ func start_game(startMessage):
 	for user in userList:
 		userList[user]["cycleActions"].clear()
 	
-	if dedicated:
-		print("Game started")
+#	if dedicated:
+#		print("Game started")
 	
 	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", startMessage)
 
@@ -1063,9 +1070,12 @@ func user_left(ID):
 # Called when user disconnects, removes their information from game lists and dicts
 	if get_tree().get_network_unique_id() == 1: # Only run on server
 		
-		if connectedList.has(ID): # If client failed to login, skip
-			if dedicated:
-				print(connectedList[ID] + " disconnected")
+		# If client failed to login, skip
+		if connectedList.has(ID):
+			# Save the time of logout, to prevent spamming logins
+			userList[connectedList[ID]]["logoutTime"] = OS.get_unix_time()
+#			if dedicated:
+#				print(connectedList[ID] + " disconnected")
 			var discAlias = IDtoAlais[ID]
 			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", IDtoAlais[ID] + " disconnected")
 			connectedList2.erase(connectedList[ID])
