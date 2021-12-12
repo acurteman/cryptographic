@@ -111,6 +111,7 @@ func _ready():
 	editPopup.connect("id_pressed", self, "_on_edit_item_pressed")
 	
 	helpPopup = $helpButton.get_popup()
+	helpPopup.add_item("Commands")
 	helpPopup.add_item("About")
 	helpPopup.connect("id_pressed", self, "_on_help_item_pressed")
 	
@@ -222,8 +223,17 @@ func _on_file_item_pressed(ID):
 		exit()
 
 func _on_help_item_pressed(ID):
-	if ID == 0: # About
-		$helpBox.popup()
+	# Commands button
+	if ID == 0: 
+		# Print available commands, same as typing /help
+		update_message("notice", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Commands: ")
+		for item in commandList:
+			$tabs/Messages/messageBox.append_bbcode(item + ": " + commandList[item])
+			$tabs/Messages/messageBox.newline()
+		
+	# About button
+	elif ID == 1: 
+		$aboutBox.popup()
 
 func _on_inputText_text_entered(newText):
 	if newText.length() > 0: # check for blank input

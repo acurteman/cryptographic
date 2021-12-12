@@ -53,15 +53,29 @@ External scripts should be formatted in .csv files. The first line should contai
 
 ### adminCommands: Dictionary
 
-- Client variable. Contains all commands that can be called by server admins, keys are commands, values are command descriptions
+- Client variable. Contains all commands that can be used by server admins, keys are commands, values are command descriptions.
+
+- Admin commands:
+
+    - "/announce": "Broadcast message to all users from the server"
+
+	- "/ban": "< alias > Bans user from the server"
+
+	- "/kick": "< alias > Kicks user from the server"
+
+	- "/shutdown": "Shuts down the game server"
+
+	- "/startgame": "Forces the game to start"
+
+	- "/stopgame": "Forces the game to stop"
 
 ### aliasToID: Dictionary
 
-- Server variable. Dictionary of connected users, keys are user aliases, values are network IDs
+- Server variable. Dictionary of connected users, keys are user aliases, values are network IDs.
 
 ### commandList: Dictionary
 
-- Client variable. Contains all the commands that users can use. Keys are the commands (with forward slashes, ex: "/help"), values are command descriptions
+- Client variable. Contains all the commands that users can use. Keys are the commands (with forward slashes, ex: "/help"), values are command descriptions.
 
 - Commands:
 

@@ -398,31 +398,32 @@ __meta__ = {
 anchor_left = 0.283
 anchor_top = 0.217
 anchor_right = 0.586
-anchor_bottom = 0.817
+anchor_bottom = 0.64
 margin_left = 0.207977
-margin_top = -0.200012
+margin_top = -0.199997
 margin_right = -0.0640259
-margin_bottom = -0.200012
+margin_bottom = -3.05176e-05
 theme = ExtResource( 3 )
 
 [node name="ColorRect" type="ColorRect" parent="userSettingsPopup"]
 show_behind_parent = true
 anchor_right = 1.0
-anchor_bottom = 1.0
+anchor_bottom = 0.661
+margin_bottom = 86.106
 color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="usernameLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.025
-anchor_top = 0.032
-anchor_right = 0.29
-anchor_bottom = 0.086
-margin_left = 0.25
-margin_top = 0.48
-margin_right = 1.09999
-margin_bottom = 0.039999
+anchor_left = 0.045
+anchor_top = 0.087
+anchor_right = 0.313
+anchor_bottom = 0.161
+margin_left = 0.0499992
+margin_top = -0.0979977
+margin_right = -0.0300064
+margin_bottom = 0.105999
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
 text = "User name: "
@@ -432,14 +433,14 @@ __meta__ = {
 }
 
 [node name="userColorLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.222
-anchor_right = 0.484
-anchor_bottom = 0.278
-margin_left = 0.0799999
-margin_top = 0.0799942
-margin_right = -0.0400085
-margin_bottom = -0.0800095
+anchor_left = 0.045
+anchor_top = 0.37
+anchor_right = 0.497
+anchor_bottom = 0.445
+margin_left = 0.0499992
+margin_top = 0.0199966
+margin_right = -0.0700073
+margin_bottom = -0.0300064
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
 text = "User BBCode Color: "
@@ -449,28 +450,28 @@ __meta__ = {
 }
 
 [node name="usernameInput" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.548
-anchor_top = 0.032
-anchor_right = 0.977
-anchor_bottom = 0.103
-margin_left = 0.119995
-margin_top = 0.48
-margin_right = 0.130005
-margin_bottom = -0.0800018
+anchor_left = 0.535
+anchor_top = 0.055
+anchor_right = 0.948
+anchor_bottom = 0.15
+margin_left = 0.149994
+margin_top = 0.0299988
+margin_right = 0.119965
+margin_bottom = 0.899998
 focus_next = NodePath("../aliasInput")
 theme = ExtResource( 3 )
 text = "defaultUser"
 align = 2
 
 [node name="userApplyButton" type="Button" parent="userSettingsPopup"]
-anchor_left = 0.387
-anchor_top = 0.889
-anchor_right = 0.587
-anchor_bottom = 0.986
-margin_left = 0.0299911
-margin_top = -0.0400085
-margin_right = 0.0299988
-margin_bottom = -0.160034
+anchor_left = 0.406
+anchor_top = 0.811
+anchor_right = 0.606
+anchor_bottom = 0.908
+margin_left = 0.139992
+margin_top = 0.0059967
+margin_right = 0.139999
+margin_bottom = -0.00804138
 focus_next = NodePath("../usernameInput")
 theme = ExtResource( 3 )
 text = "Apply"
@@ -479,13 +480,14 @@ __meta__ = {
 }
 
 [node name="userColor" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.71
-anchor_top = 0.25
-anchor_right = 0.977
-anchor_bottom = 0.319
-margin_left = -0.100006
-margin_right = 3.13
-margin_bottom = 0.159996
+anchor_left = 0.69
+anchor_top = 0.37
+anchor_right = 0.948
+anchor_bottom = 0.465
+margin_left = 0.0999756
+margin_top = 0.0199966
+margin_right = 0.119965
+margin_bottom = 0.889992
 focus_next = NodePath("../userApplyButton")
 theme = ExtResource( 3 )
 text = "red"
@@ -493,66 +495,28 @@ align = 2
 max_length = 20
 
 [node name="timeLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.333
-anchor_right = 0.513
-anchor_bottom = 0.389
-margin_left = 0.0799999
-margin_top = 0.119995
-margin_right = -0.0299988
-margin_bottom = -0.0400085
+anchor_left = 0.045
+anchor_top = 0.559
+anchor_right = 0.526
+anchor_bottom = 0.634
+margin_left = 0.0499992
+margin_top = 0.0139923
+margin_right = -0.0600128
+margin_bottom = -0.0359955
 theme = ExtResource( 3 )
 text = "Display time stamps:"
 
 [node name="timeBtn" type="CheckButton" parent="userSettingsPopup"]
-anchor_left = 0.742
-anchor_top = 0.333
-anchor_right = 0.961
-anchor_bottom = 0.433
-margin_left = -0.0200195
-margin_top = 0.119995
-margin_right = 0.0899963
-margin_bottom = 0.119995
+anchor_left = 0.716
+anchor_top = 0.528
+anchor_right = 0.948
+anchor_bottom = 0.669
+margin_left = 0.0399933
+margin_top = -0.112
+margin_right = 0.119965
+margin_bottom = 0.0739899
 theme = ExtResource( 3 )
 pressed = true
-
-[node name="logLocLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.694
-anchor_right = 0.632
-anchor_bottom = 0.759
-margin_left = 0.0800056
-margin_top = 0.159973
-margin_right = 0.0799866
-margin_bottom = -0.0400391
-theme = ExtResource( 3 )
-text = "Network log save location:"
-
-[node name="logLocInput" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.778
-anchor_right = 0.709
-anchor_bottom = 0.858
-margin_left = 0.0800056
-margin_top = -0.0800476
-margin_right = -0.0430145
-margin_bottom = 0.169952
-theme = ExtResource( 3 )
-
-[node name="logLocBrowseBtn" type="Button" parent="userSettingsPopup"]
-anchor_left = 0.742
-anchor_top = 0.778
-anchor_right = 0.968
-anchor_bottom = 0.852
-margin_left = -0.02005
-margin_top = -0.0800476
-margin_right = -2.48203
-margin_bottom = 0.0299072
-theme = ExtResource( 3 )
-text = "Browse"
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="logLocPopup" type="FileDialog" parent="userSettingsPopup"]
 margin_left = 3.0
@@ -567,69 +531,33 @@ current_dir = "/home/alex/Godot/Cryptographic"
 current_path = "/home/alex/Godot/Cryptographic/"
 
 [node name="aliasLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.139
-anchor_right = 0.171
-anchor_bottom = 0.194
-margin_left = 0.0799999
-margin_top = -0.0400047
-margin_right = -0.0100021
-margin_bottom = 0.159996
+anchor_left = 0.045
+anchor_top = 0.213
+anchor_right = 0.184
+anchor_bottom = 0.287
+margin_left = 0.0499992
+margin_top = -0.102013
+margin_right = -0.0400047
+margin_bottom = 0.10199
 theme = ExtResource( 3 )
 text = "Alias: "
 valign = 1
 
 [node name="aliasInput" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.613
+anchor_left = 0.561
 anchor_top = 0.139
-anchor_right = 0.977
-anchor_bottom = 0.208
-margin_left = -0.030014
-margin_top = -0.0400047
-margin_right = 4.13
-margin_bottom = 0.119995
+anchor_right = 0.948
+anchor_bottom = 0.311
+margin_left = 0.0899811
+margin_top = 18.694
+margin_right = 0.119965
+margin_bottom = 0.00600433
 focus_next = NodePath("../userColor")
 theme = ExtResource( 3 )
 text = "defaultAlias"
 align = 2
 
-[node name="outputLabel" type="Label" parent="userSettingsPopup"]
-anchor_left = 0.032
-anchor_top = 0.472
-anchor_right = 0.452
-anchor_bottom = 0.536
-margin_left = 0.0799999
-margin_top = 0.0799866
-margin_right = -1.12001
-margin_bottom = 0.0899811
-text = "Output Frequency:"
-
-[node name="outputButton" type="OptionButton" parent="userSettingsPopup"]
-margin_left = 180.0
-margin_top = 170.0
-margin_right = 300.0
-margin_bottom = 193.0
-
-[node name="outputDurLabel" type="Label" parent="userSettingsPopup"]
-margin_left = 10.0
-margin_top = 210.0
-margin_right = 183.0
-margin_bottom = 229.0
-text = "Output Interval Duration:"
-
-[node name="outputInterval" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.774
-anchor_top = 0.583
-anchor_right = 0.968
-anchor_bottom = 0.653
-margin_left = 0.0599823
-margin_top = 0.119995
-margin_right = -0.0800171
-margin_bottom = -0.0800171
-text = "1.0"
-align = 2
-
-[node name="helpBox" type="PopupPanel" parent="."]
+[node name="aboutBox" type="PopupPanel" parent="."]
 anchor_left = 0.215
 anchor_top = 0.217
 anchor_right = 0.781
@@ -638,15 +566,16 @@ margin_left = -180.16
 margin_top = -120.2
 margin_right = 190.256
 margin_bottom = 129.8
+theme = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="helpText" type="RichTextLabel" parent="helpBox"]
-margin_left = 4.0
-margin_top = 4.0
-margin_right = 946.0
-margin_bottom = 576.0
+[node name="aboutText" type="RichTextLabel" parent="aboutBox"]
+margin_left = 8.0
+margin_top = 6.0
+margin_right = 944.0
+margin_bottom = 574.0
 focus_mode = 2
 theme = ExtResource( 3 )
 bbcode_enabled = true
@@ -725,5 +654,4 @@ __meta__ = {
 [connection signal="text_entered" from="inputText" to="." method="_on_inputText_text_entered"]
 [connection signal="pressed" from="joinPopup/joinButton" to="." method="_on_joinButton_pressed"]
 [connection signal="pressed" from="userSettingsPopup/userApplyButton" to="." method="_on_userApplyButton_pressed"]
-[connection signal="pressed" from="userSettingsPopup/logLocBrowseBtn" to="." method="_on_logLocBrowseBtn_pressed"]
 [connection signal="dir_selected" from="userSettingsPopup/logLocPopup" to="." method="_on_logLocPopup_dir_selected"]
