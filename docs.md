@@ -73,6 +73,26 @@ External scripts should be formatted in .csv files. The first line should contai
 
 - Server variable. Dictionary of connected users, keys are user aliases, values are network IDs.
 
+### arguments: Dictionary
+
+- Server variable, contains all actions and the number of needed arguments. Used to make checks before executing actions that the needed number of arguments was passed.
+
+    - "changeAlias": 1
+
+	- "dox": 1
+
+	- "forceSkip": 1
+
+	- "fortFirewall": 0
+
+	- "hackWallet": 1
+
+	- "shuffleProc": 0
+
+	- "stealID": 1
+
+	- "traceRoute": 0
+
 ### commandList: Dictionary
 
 - Client variable. Contains all the commands that users can use. Keys are the commands (with forward slashes, ex: "/help"), values are command descriptions.
@@ -120,6 +140,8 @@ External scripts should be formatted in .csv files. The first line should contai
 - Client variable. Contains all the actions that can be performed by the /cycle command. Keys are actions, and values are action descriptions
 
 - Dictionary contents:
+
+    - "dox": "Reveal users details to entire network"
 
     - "forceSkip": "Force the network to skip a user on the next cycle"
 
@@ -239,16 +261,6 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "dispTimeStamps": Bool, toggles if time stamps are printed with messages
 
-    - "localLogLocation": String, file path used to save network local message logs
-
-    - "outputFreq": String, Sets how often the game output is written to file. Available options:
-
-        - "cycle": Output is written once every cycle
-
-        - "interval": Output is written once every given interval
-
-    - "outputInterval": Float, Sets how often output is written to file if the outputFreq is set to "interval"
-
 ### processModes: Dictionary
 
 - Client variable. Contains all the available process modes, keys are modes, values are mode descriptions
@@ -296,6 +308,8 @@ External scripts should be formatted in .csv files. The first line should contai
 - Dictionary contents:
 
     - "changeAlias": 250,
+
+    - "dox": 125
 
 	- "forceSkip": 150,
 

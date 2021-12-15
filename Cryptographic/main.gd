@@ -29,6 +29,7 @@ var commandList = {
 	"/transfer": "<target> <amount> Transfer credits to another user",
 	"/w": "<username> <message> Send whisper to another user"}
 var cycleActionList = {
+	"dox": "Reveal users details to entire network",
 	"forceSkip": "Force the network to skip a user on the next cycle",
 	"fortFirewall": "Fortify your firewall, which will prevent one succesfull attack",
 	"hackWallet": "Attempt to steal credits from another users wallet",
@@ -50,10 +51,7 @@ var prefs = {
 	"userColor": "red",
 	"sysColor": "gray",
 	"sysName": "system",
-	"dispTimeStamps": true,
-	"localLogLocation": "user://",
-	"outputFreq": "cycle",
-	"outputInterval": 1.0}
+	"dispTimeStamps": true}
 var processModes = {
 	"balanced": "Attack, defence, and creditMult stat each recieve a .1 increase each cycle",
 	"attack": "Attack stat recieves a .2 increase each cycle, others a .5",
@@ -76,6 +74,7 @@ var sharedNetworkInfo = {
 	"userMaxCreds": {}}
 var shopItems = {
 	"changeAlias": 250,
+	"dox": 125,
 	"forceSkip": 150,
 	"fortFirewall": 50,
 	"hackWallet": 100,
@@ -353,13 +352,7 @@ func _on_userApplyButton_pressed():
 	prefs["userName"] = $userSettingsPopup/usernameInput.text
 	prefs["userColor"] = $userSettingsPopup/userColor.text
 	prefs["dispTimeStamps"] = $userSettingsPopup/timeBtn.pressed
-	prefs["localLogLocation"] = $userSettingsPopup/logLocInput.text
 	prefs["userAlias"] = $userSettingsPopup/aliasInput.text
-	if $userSettingsPopup/outputButton.get_selected_id() == 1:
-		prefs["outputFreq"] = "cycle"
-	elif $userSettingsPopup/outputButton.get_selected_id() == 2:
-		prefs["outputFreq"] = "interval"
-	prefs["outputInterval"] = float($userSettingsPopup/outputInterval.text)
 	save_prefs()
 
 func add_cycle_action(command):
@@ -378,7 +371,7 @@ func add_cycle_action(command):
 			return
 	
 	# Send action to server
-	rpc_id(1, "set_cycle_action", get_tree().get_network_unique_id(), command)
+	rpc_id(1, "add_cycle_action", get_tree().get_network_unique_id(), command)
 
 func change_color(command):
 # Client function
@@ -575,7 +568,6 @@ func load_prefs():
 	
 	$userSettingsPopup/usernameInput.text = prefs["userName"]
 	$userSettingsPopup/userColor.text = prefs["userColor"]
-	$userSettingsPopup/logLocInput.text = prefs["localLogLocation"]
 	$userSettingsPopup/aliasInput.text = prefs["userAlias"]
 
 remote func log_activity(activity, target, status="", message = ""):

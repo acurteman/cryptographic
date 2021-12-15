@@ -1,6 +1,15 @@
 extends Node
 
 var aliasToID = {} # List of users with alias's as keys and ID's as values
+var arguments = {
+	"changeAlias": 1,
+	"dox": 1,
+	"forceSkip": 1,
+	"fortFirewall": 0,
+	"hackWallet": 1,
+	"shuffleProc": 0,
+	"stealID": 1,
+	"traceRoute": 0} # List of all actions and the number of required arguments, keys are command names, values are number of arguments
 var connectedList = {} # List of connected users, keys are ID's, values are usernames
 var connectedList2 = {} # Reverse of connected list, keys are usernames, values are ID's
 var cycleTimer
@@ -43,6 +52,7 @@ var sharedNetworkInfo = {
 	"userMaxCreds": {}}
 var shopItems = {
 	"changeAlias": 250,
+	"dox": 125,
 	"forceSkip": 75,
 	"fortFirewall": 50,
 	"hackWallet": 100,
@@ -142,6 +152,24 @@ func activate_traceRoute(userID, tracedID):
 	else:
 		userList[connectedList[userID]]["hackModifier"][connectedList[tracedID]] = .5
 
+remote func add_cycle_action(senderID, command):
+# Adds users cycle action to their cyclaActions array
+# Expected command format: ["/cycle", "action", "optionalArg"]
+
+	# Check that command has minimum required arguments
+	if not check_arguments(command, senderID):
+		return
+
+	# Formatting users cycle action into array, with first element being the action,
+	# and the second being an optional target
+	var formattedAction = []
+	formattedAction.append(command[1])
+	if len(command) > 2:
+		formattedAction.append(command[2])
+	
+	userList[connectedList[senderID]]["cycleActions"].append(formattedAction)
+	server_message(senderID, "sys", "Cycle action added")
+
 func add_user(ID, userName, alias):
 # Called when a user connects to the network. Adds their info to various lists,
 # and sends info to other connected users. If minimum players reached to start
@@ -235,14 +263,31 @@ func attack_outcome(defAlias, attID, attackType):
 	
 	return outcome
 
+func attempt_dox(targetAlias, attemptUserID):
+# Called when a user attempts to dox someone.
+# Performs an attack check, if successful, reveals the target information to all connected users
+	
+	# Attack check
+	if attack_outcome(targetAlias, attemptUserID, "dox"):
+		server_message(attemptUserID, "sys", targetAlias + " was successfully doxxed!")
+		
+		var targetUname = connectedList[aliasToID[targetAlias]]
+		# Create array of messages with userInfo to be shared 
+		var doxArray = [targetAlias + " was doxxed by " + IDtoAlais[attemptUserID] + "!"]
+		doxArray.append(targetAlias + "'s username: " + targetUname)
+		doxArray.append(targetAlias + "'s current credits: " + str(userList[targetUname]["currentCredits"]))
+		doxArray.append(targetAlias + "'s attack: " + str(userList[targetUname]["attack"]))
+		doxArray.append(targetAlias + "'s defense: " + str(userList[targetUname]["defense"]))
+		doxArray.append(targetAlias + "'s credit multiplier: " + str(userList[targetUname]["creditMult"]))
+		doxArray.append(targetAlias + "'s cycle mode: " + userList[targetUname]["processMode"])
+		
+		# Send dox messages to all users
+		for item in doxArray:
+			rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", item)
+
 func attempt_hackWallet(targetAlias, attemptUserID):
 # Determines if an attackWallet attempt is succesfull, and transferes
 # credits accordingly
-	
-	# Check if target is connected
-	if not sharedNetworkInfo["connectedUsers"].has(targetAlias):
-		server_message(attemptUserID, "sys", "hackWallet failed. " + targetAlias + " not connected.")
-		rpc_id(attemptUserID, "log_activity", "hackWallet", targetAlias, "fail", "User not connected")
 	
 	server_message(attemptUserID, "sys", "Attempting to hack the wallet of " + targetAlias)
 	
@@ -472,6 +517,27 @@ func check_alias(alias, senderID):
 		rpc_id(senderID, "client_update_alias", newAlias)
 		return(newAlias)
 
+func check_arguments(command, userID):
+# Checks if the length of a command is at least as big as the expected compared
+# to the arguments variable
+	
+	var commandName
+	
+	# check if cycle action or item execution
+	if command[0] == "/cycle":
+		commandName = command[1]
+	else:
+		commandName = command[0]
+	
+	# Missing arguments, return false
+	if command.size() < (arguments[commandName] - 1):
+		server_message(userID, "sys", "Insufficient arguments for command: " + commandName)
+		return false
+	
+	# Command has min arguments, return true
+	else:
+		return true
+
 func check_maxCredits(userName):
 # Performs a check to see if a users current credits are greater
 # than their maxCredits. If so, updates maxCredits accordingly
@@ -492,6 +558,8 @@ func check_maxCredits(userName):
 			rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 
 func check_target(action, targetAlias, userID):
+# Makes a check to determine if a user is still connected before attempting an action on them
+
 	if not sharedNetworkInfo["connectedUsers"].has(targetAlias):
 		server_message(userID, "sys", action + " failed. " + targetAlias + " not connected.")
 		return(false)
@@ -560,11 +628,20 @@ remote func execute_item(item, userID):
 			server_message(userID, "sys", "Unable to execute, inventory empty")
 			return
 		
+		# Check that all arguments were passed
+		elif not check_arguments(item, userID):
+			return
+		
 		# Remove item from inventory and execute
 		userList[connectedList[userID]]["inventory"][item[0]] -= 1
 		
 		if item[0] == "changeAlias":
 			change_alias(item[1], userID)
+		
+		elif item[0] == "dox":
+			# Check for valid target, then execute
+			if check_target(item[0], item[1], userID):
+				attempt_dox(item[1], userID)
 		
 		elif item[0] == "forceSkip":
 			# Check for valid target, then execute
@@ -583,7 +660,9 @@ remote func execute_item(item, userID):
 			shuffle_process(userID)
 			
 		elif item[0] == "stealID":
-			attempt_stealID(item[1], userID)
+			# Check for valid target, then execute
+			if check_target(item[0], item[1], userID):
+				attempt_stealID(item[1], userID)
 		
 		elif item[0] == "traceRoute":
 			init_traceRoute(userID)
@@ -725,32 +804,34 @@ remote func net_login(userName, password, alias, clientVersion):
 			rpc_id(get_tree().get_rpc_sender_id(), "login_fail", "Invalid password")
 
 func process_action_server(action, userID):
-# Handles actions queued in clients cycle action array
+# Handles actions queued in clients cycle action array, called during the _process_cycle function
 # The action parameter is an array, with first element being the action,
 # and further elements being action targets or options depending on the action
 
+	if action[0] == "dox":
+		if check_target(action[0], action[1], userID):
+			attempt_dox(action[1], userID)
+	
 	if action[0] == "forceSkip":
-		# Checking that target exists
-		if len(action) > 1:
+		# Check for valid target, then execute
+		if check_target(action[0], action[1], userID):
 			force_skip(action[1], userID)
-		else:
-			server_message(userID, "sys", "Error, no target for forceSkip")
 		
 	elif action[0] == "fortFirewall":
 		fortify_firewall(userID)
 	
 	elif action[0] == "hackWallet":
-		# Checking that target exists
-		if len(action) > 1:
+		# Check for valid target, then execute
+		if check_target(action[0], action[1], userID):
 			attempt_hackWallet(action[1], userID)
-		else:
-			server_message(userID, "sys", "Error, no target for hackWallet")
 		
 	elif action[0] == "shuffleProc":
 		shuffle_process(userID)
 		
 	elif action[0] == "stealID":
-		attempt_stealID(action[1], userID)
+		# Check for valid target, then execute
+		if check_target(action[0], action[1], userID):
+			attempt_stealID(action[1], userID)
 	
 	elif action[0] == "traceRoute":
 		init_traceRoute(userID)
@@ -951,19 +1032,6 @@ func server_new_cycle():
 	# Check for bank deposits and process
 	if depositList.size() > 0:
 		process_deposits()
-
-remote func set_cycle_action(senderID, command):
-# Adds users cycle action to their cyclaActions array
-
-	# Formatting users cycle action into array, with first element being the action,
-	# and the second being an optional target
-	var formattedAction = []
-	formattedAction.append(command[1])
-	if len(command) > 2:
-		formattedAction.append(command[2])
-	
-	userList[connectedList[senderID]]["cycleActions"].append(formattedAction)
-	server_message(senderID, "sys", "Cycle action added")
 
 remote func set_server_pass(command):
 # Called by server admins to change the server password
