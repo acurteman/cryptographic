@@ -965,6 +965,25 @@ remote func set_cycle_action(senderID, command):
 	userList[connectedList[senderID]]["cycleActions"].append(formattedAction)
 	server_message(senderID, "sys", "Cycle action added")
 
+remote func set_server_pass(command):
+# Called by server admins to change the server password
+# Expected command format: ["/setserverpass", "newpassword"]
+	
+	var senderID = get_tree().get_rpc_sender_id()
+	
+	# Check that sender is admin
+	if check_admin(senderID):
+		
+		# Check for valid syntax
+		if command.size() < 2:
+			server_message(senderID, "notice", "Invalid syntax for setserverpass")
+		
+		# Checks passed, change server password
+		else:
+			networkInfo["netPass"] = command[1]
+			save_network()
+			server_message(senderID, "notice", "Server password change to " + command[1])
+
 func shuffle_process(userID):
 # Shuffles the process action list, which determines the player order during cycle processing
 	server_message(userID, "sys", "Suffling process order")

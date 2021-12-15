@@ -572,10 +572,10 @@ __meta__ = {
 }
 
 [node name="aboutText" type="RichTextLabel" parent="aboutBox"]
-margin_left = 8.0
-margin_top = 6.0
-margin_right = 944.0
-margin_bottom = 574.0
+margin_left = 3.0
+margin_top = 3.0
+margin_right = 947.0
+margin_bottom = 577.0
 focus_mode = 2
 theme = ExtResource( 3 )
 bbcode_enabled = true

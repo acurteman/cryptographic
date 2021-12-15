@@ -6,6 +6,7 @@ var adminCommands = {
 	"/ban": "<username> Bans user from the server",
 	"/kick": "<username> Kicks user from the server",
 	"/resetgame": "Resets all game data",
+	"/setserverpass": "Change the server password",
 	"/shutdown": "Shuts down the game server",
 	"/startgame": "Forces the game to start",
 	"/stopgame": "Forces the game to stop",
@@ -673,6 +674,10 @@ func process_command(newCommand):
 		# Shut down the game server
 		elif command[0] == "/shutdown":
 			rpc_id(1, "remote_shutdown")
+		
+		# Change the server password
+		elif command[0] == "/setserverpass":
+			rpc_id(1, "set_server_pass", command)
 		
 		# Force start the game
 		elif command[0] == "/startgame":
