@@ -11,6 +11,8 @@ var adminCommands = {
 	"/startgame": "Forces the game to start",
 	"/stopgame": "Forces the game to stop",
 	"/users": "View the usernames of connected users"}
+var commandHistory = []
+var commandHistoryIndex = -1
 var commandList = {
 	"/bank": "<amount> <duration> Bank credits for a specified number of cycles, earning interest.",
 	"/buy": "<item name> <quanitity> Purchase an item",
@@ -70,17 +72,17 @@ var sharedNetworkInfo = {
 	"messageLog": [],
 	"connectedUsers": {},
 	"processOrder": [],
-	"shopTax" : 5,
+	"shopTax" : 2,
 	"userMaxCreds": {}}
 var shopItems = {
 	"changeAlias": 250,
 	"dox": 125,
 	"forceSkip": 150,
-	"fortFirewall": 50,
+	"fortFirewall": 20,
 	"hackWallet": 100,
 	"shuffleProc": 15,
 	"stealID": 300,
-	"traceRoute": 75}
+	"traceRoute": 25}
 var userInfo = {}
 var userPass = ""
 var userScript = []
@@ -122,8 +124,23 @@ func _ready():
 	$tabs/Script/loopBtn.add_item("Every Cycle")
 	#$tabs/Script/loopBtn.add_item("Continuous")
 	
-	$userSettingsPopup/outputButton.add_item("Cycle", 1)
-	$userSettingsPopup/outputButton.add_item("Interval", 2)
+#	$userSettingsPopup/outputButton.add_item("Cycle", 1)
+#	$userSettingsPopup/outputButton.add_item("Interval", 2)
+
+func _input(event):
+	# Checks if up or down has been pressed, changes the text in the inputText field
+	# to commands in the commandHistory array
+	
+	# first checks that commandHistory is not empty
+	if len(commandHistory) > 0:
+		if event.is_action_pressed("command_prev"):
+			$inputText.text = commandHistory[commandHistoryIndex]
+			if commandHistoryIndex > 0:
+				commandHistoryIndex -= 1
+		elif event.is_action_pressed("command_next"):
+			if commandHistoryIndex < len(commandHistory) - 1:
+				commandHistoryIndex += 1
+				$inputText.text = commandHistory[commandHistoryIndex]
 
 func _interval_execute():
 # Local function
@@ -237,6 +254,11 @@ func _on_help_item_pressed(ID):
 
 func _on_inputText_text_entered(newText):
 	if newText.length() > 0: # check for blank input
+		
+		# Add text to commandHistory
+		commandHistory.append(newText)
+		commandHistoryIndex = len(commandHistory) - 1
+		
 		if newText[0] == "/": # check for command input
 			process_command(newText)
 			$inputText.clear()

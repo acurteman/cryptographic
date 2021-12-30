@@ -243,6 +243,10 @@ External scripts should be formatted in .csv files. The first line should contai
 
     - "shopTax": Int, percentage of users maxCredits that gets added to every purchase
 
+## numUsers: Int
+
+- Keeps track of how many users are connected to the server
+
 ### prefs: Dictionary
 
 - Client variable. Used to store all local user preferences

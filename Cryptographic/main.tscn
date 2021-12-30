@@ -285,6 +285,7 @@ margin_left = -0.240001
 margin_top = -6.10352e-05
 margin_right = -0.352051
 margin_bottom = 0.199951
+focus_mode = 1
 theme = ExtResource( 3 )
 max_length = 255
 __meta__ = {
