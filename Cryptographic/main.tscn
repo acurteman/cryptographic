@@ -1,11 +1,7 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=3 format=2]
 
 [ext_resource path="res://main.gd" type="Script" id=1]
-[ext_resource path="res://Fonts/Roboto-Regular.ttf" type="DynamicFontData" id=2]
 [ext_resource path="res://Theme/mainTheme.tres" type="Theme" id=3]
-
-[sub_resource type="DynamicFont" id=1]
-font_data = ExtResource( 2 )
 
 [node name="main" type="Control"]
 anchor_right = 1.0
@@ -19,19 +15,35 @@ __meta__ = {
 anchor_right = 0.996
 anchor_bottom = 1.0
 margin_right = 4.09595
-color = Color( 0.133333, 0.156863, 0.192157, 1 )
+color = Color( 0, 0, 0, 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="connectedBoxLabel" type="Label" parent="."]
+anchor_left = 0.734
+anchor_top = 0.053
+anchor_right = 0.893
+anchor_bottom = 0.08
+margin_left = 0.383972
+margin_top = 0.199999
+margin_right = -0.432068
+margin_bottom = -3.8147e-06
+theme = ExtResource( 3 )
+text = "Users: High scores"
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
 [node name="tabs" type="TabContainer" parent="."]
-anchor_left = 0.01
-anchor_top = 0.05
-anchor_right = 0.723
-anchor_bottom = 0.917
-margin_left = -0.240001
-margin_right = -0.352051
-margin_bottom = -0.200012
+anchor_left = 0.008
+anchor_top = 0.093
+anchor_right = 0.719
+anchor_bottom = 0.933
+margin_left = -0.192
+margin_top = -25.8
+margin_right = -0.256042
+margin_bottom = 0.200012
 theme = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -40,12 +52,8 @@ __meta__ = {
 [node name="Messages" type="Tabs" parent="tabs"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 2.0
 margin_top = 25.0
-margin_right = -2.0
-margin_bottom = -2.0
 theme = ExtResource( 3 )
-drag_to_rearrange_enabled = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -53,10 +61,12 @@ __meta__ = {
 [node name="messageBox" type="RichTextLabel" parent="tabs/Messages"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_top = 0.0319998
+margin_right = 0.17804
+margin_bottom = 0.0319824
 focus_mode = 2
 size_flags_vertical = 3
 theme = ExtResource( 3 )
-custom_fonts/normal_font = SubResource( 1 )
 bbcode_enabled = true
 scroll_following = true
 selection_enabled = true
@@ -65,17 +75,16 @@ __meta__ = {
 }
 
 [node name="Console" type="Tabs" parent="tabs"]
-visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 2.0
 margin_top = 25.0
-margin_right = -2.0
-margin_bottom = -2.0
+theme = ExtResource( 3 )
 
 [node name="consoleBox" type="RichTextLabel" parent="tabs/Console"]
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_top = 0.0139999
+margin_bottom = 0.0140076
 theme = ExtResource( 3 )
 scroll_following = true
 __meta__ = {
@@ -86,10 +95,8 @@ __meta__ = {
 visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_left = 2.0
 margin_top = 25.0
-margin_right = -2.0
-margin_bottom = -2.0
+theme = ExtResource( 3 )
 
 [node name="scriptText" type="TextEdit" parent="tabs/Script"]
 margin_left = 9.0
@@ -248,11 +255,11 @@ __meta__ = {
 
 [node name="connectedBox" type="ItemList" parent="."]
 anchor_left = 0.732
-anchor_top = 0.083
+anchor_top = 0.093
 anchor_right = 1.0
 anchor_bottom = 0.467
 margin_left = 0.431946
-margin_top = 0.200001
+margin_top = 0.199997
 margin_right = -14.0
 margin_bottom = -0.200012
 theme = ExtResource( 3 )
@@ -267,8 +274,8 @@ anchor_left = 0.732
 anchor_top = 0.483
 anchor_right = 1.0
 anchor_bottom = 0.983
-margin_left = 0.431946
-margin_top = 0.199982
+margin_left = 0.432007
+margin_top = 30.2
 margin_right = -11.0
 margin_bottom = 0.200012
 theme = ExtResource( 3 )
@@ -277,14 +284,15 @@ __meta__ = {
 }
 
 [node name="inputText" type="LineEdit" parent="."]
-anchor_left = 0.01
-anchor_top = 0.935
-anchor_right = 0.723
-anchor_bottom = 0.983
-margin_left = -0.240001
-margin_top = -6.10352e-05
-margin_right = -0.352051
-margin_bottom = 0.199951
+anchor_left = 0.008
+anchor_top = 0.947
+anchor_right = 0.719
+anchor_bottom = 0.987
+margin_left = -0.192
+margin_top = -0.200012
+margin_right = -0.256042
+margin_bottom = -0.200012
+grow_vertical = 0
 focus_mode = 1
 theme = ExtResource( 3 )
 max_length = 255
@@ -293,11 +301,14 @@ __meta__ = {
 }
 
 [node name="fileButton" type="MenuButton" parent="."]
-anchor_left = 0.01
+anchor_left = 0.008
+anchor_top = 0.013
 anchor_right = 0.049
-anchor_bottom = 0.05
-margin_left = -0.239999
-margin_right = -0.176003
+anchor_bottom = 0.043
+margin_left = -0.192
+margin_top = 0.2
+margin_right = -0.175999
+margin_bottom = 0.199999
 theme = ExtResource( 3 )
 text = "File"
 __meta__ = {
@@ -305,11 +316,14 @@ __meta__ = {
 }
 
 [node name="editButton" type="MenuButton" parent="."]
-anchor_left = 0.049
+anchor_left = 0.055
+anchor_top = 0.013
 anchor_right = 0.098
-anchor_bottom = 0.05
-margin_left = -0.176003
-margin_right = -0.352005
+anchor_bottom = 0.043
+margin_left = -0.320004
+margin_top = 0.2
+margin_right = -0.351997
+margin_bottom = 0.199999
 theme = ExtResource( 3 )
 text = "Edit"
 __meta__ = {
@@ -318,10 +332,13 @@ __meta__ = {
 
 [node name="helpButton" type="MenuButton" parent="."]
 anchor_left = 0.102
-anchor_right = 0.15
-anchor_bottom = 0.05
+anchor_top = 0.013
+anchor_right = 0.143
+anchor_bottom = 0.043
 margin_left = -0.448006
-margin_right = 0.399994
+margin_top = 0.2
+margin_right = -0.432007
+margin_bottom = 0.199999
 focus_mode = 2
 theme = ExtResource( 3 )
 text = "Help"
@@ -329,25 +346,18 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="joinPopup" type="Popup" parent="."]
-margin_left = 290.0
-margin_top = 130.0
-margin_right = 550.0
+[node name="joinPopup" type="WindowDialog" parent="."]
+margin_left = 288.0
+margin_top = 128.0
+margin_right = 552.0
 margin_bottom = 296.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="ColorRect" type="ColorRect" parent="joinPopup"]
-margin_right = 260.0
-margin_bottom = 166.0
-color = Color( 0.133333, 0.156863, 0.192157, 1 )
+theme = ExtResource( 3 )
 
 [node name="serverLabel" type="Label" parent="joinPopup"]
-margin_left = 10.0
-margin_top = 10.0
-margin_right = 45.0
-margin_bottom = 35.0
+margin_left = 16.0
+margin_top = 16.0
+margin_right = 88.0
+margin_bottom = 32.0
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
 text = "Server: "
@@ -357,10 +367,10 @@ __meta__ = {
 }
 
 [node name="joinButton" type="Button" parent="joinPopup"]
-margin_left = 110.0
-margin_top = 126.0
-margin_right = 153.0
-margin_bottom = 151.0
+margin_left = 104.0
+margin_top = 128.0
+margin_right = 152.0
+margin_bottom = 152.0
 theme = ExtResource( 3 )
 text = "Join"
 __meta__ = {
@@ -368,10 +378,10 @@ __meta__ = {
 }
 
 [node name="passLabel" type="Label" parent="joinPopup"]
-margin_left = 14.0
-margin_top = 54.0
-margin_right = 92.0
-margin_bottom = 73.0
+margin_left = 16.0
+margin_top = 56.0
+margin_right = 106.0
+margin_bottom = 74.0
 theme = ExtResource( 3 )
 text = "Password: "
 __meta__ = {
@@ -379,24 +389,23 @@ __meta__ = {
 }
 
 [node name="passInput" type="LineEdit" parent="joinPopup"]
-margin_left = 14.0
-margin_top = 86.0
-margin_right = 254.0
-margin_bottom = 111.0
+margin_left = 16.0
+margin_top = 80.0
+margin_right = 248.0
+margin_bottom = 105.0
 theme = ExtResource( 3 )
 secret = true
 
 [node name="serverButton" type="OptionButton" parent="joinPopup"]
 margin_left = 126.0
 margin_top = 14.0
-margin_right = 251.0
-margin_bottom = 34.0
+margin_right = 248.0
+margin_bottom = 37.0
 __meta__ = {
 "_edit_use_anchors_": false
 }
 
-[node name="userSettingsPopup" type="Popup" parent="."]
-visible = true
+[node name="userSettingsPopup" type="WindowDialog" parent="."]
 anchor_left = 0.283
 anchor_top = 0.217
 anchor_right = 0.586
@@ -406,13 +415,6 @@ margin_top = -0.199997
 margin_right = -0.0640259
 margin_bottom = -3.05176e-05
 theme = ExtResource( 3 )
-
-[node name="ColorRect" type="ColorRect" parent="userSettingsPopup"]
-show_behind_parent = true
-anchor_right = 1.0
-anchor_bottom = 0.661
-margin_bottom = 86.106
-color = Color( 0.133333, 0.156863, 0.192157, 1 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
@@ -482,14 +484,14 @@ __meta__ = {
 }
 
 [node name="userColor" type="LineEdit" parent="userSettingsPopup"]
-anchor_left = 0.69
+anchor_left = 0.587
 anchor_top = 0.37
 anchor_right = 0.948
 anchor_bottom = 0.465
-margin_left = 0.0999756
-margin_top = 0.0199966
-margin_right = 0.119965
-margin_bottom = 0.889992
+margin_left = 0.030014
+margin_top = 0.0200119
+margin_right = 0.119995
+margin_bottom = 0.889999
 focus_next = NodePath("../userApplyButton")
 theme = ExtResource( 3 )
 text = "red"
@@ -643,6 +645,18 @@ selection_enabled = true
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="Label" type="Label" parent="."]
+anchor_left = 0.734
+anchor_top = 0.493
+anchor_right = 0.813
+anchor_bottom = 0.52
+margin_left = 0.383972
+margin_top = 0.199982
+margin_right = 0.487976
+margin_bottom = -3.05176e-05
+theme = ExtResource( 3 )
+text = "User Info"
 
 [connection signal="pressed" from="tabs/Script/clearBtn" to="." method="_on_clearBtn_pressed"]
 [connection signal="pressed" from="tabs/Script/checkBtn" to="." method="_on_checkBtn_pressed"]
