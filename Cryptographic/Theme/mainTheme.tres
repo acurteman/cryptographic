@@ -1,4 +1,4 @@
-[gd_resource type="Theme" load_steps=31 format=2]
+[gd_resource type="Theme" load_steps=32 format=2]
 
 [ext_resource path="res://Fonts/Roboto-Regular.ttf" type="DynamicFontData" id=1]
 [ext_resource path="res://Theme/normalButton.tres" type="StyleBox" id=2]
@@ -139,6 +139,10 @@ font_data = ExtResource( 5 )
 
 [sub_resource type="DynamicFont" id=24]
 font_data = ExtResource( 5 )
+
+[sub_resource type="StyleBoxFlat" id=27]
+bg_color = Color( 0.196078, 0.196078, 0.196078, 1 )
+anti_aliasing = false
 
 [sub_resource type="StyleBoxFlat" id=25]
 bg_color = Color( 0, 0, 0, 1 )
@@ -313,7 +317,7 @@ OptionButton/fonts/font = SubResource( 26 )
 PopupMenu/colors/font_color = Color( 1, 1, 1, 1 )
 PopupMenu/colors/font_color_accel = Color( 0, 0, 0, 1 )
 PopupMenu/colors/font_color_disabled = Color( 0.490196, 0.490196, 0.490196, 1 )
-PopupMenu/colors/font_color_hover = Color( 0, 0, 0, 1 )
+PopupMenu/colors/font_color_hover = Color( 1, 1, 1, 1 )
 PopupMenu/colors/font_color_separator = Color( 0, 0, 0, 1 )
 PopupMenu/constants/hseparation = 0
 PopupMenu/constants/vseparation = 0
@@ -323,7 +327,7 @@ PopupMenu/icons/radio_checked = null
 PopupMenu/icons/radio_unchecked = null
 PopupMenu/icons/submenu = null
 PopupMenu/icons/unchecked = null
-PopupMenu/styles/hover = null
+PopupMenu/styles/hover = SubResource( 27 )
 PopupMenu/styles/labeled_separator_left = null
 PopupMenu/styles/labeled_separator_right = null
 PopupMenu/styles/panel = SubResource( 25 )

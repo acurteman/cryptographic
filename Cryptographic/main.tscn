@@ -52,7 +52,10 @@ __meta__ = {
 [node name="Messages" type="Tabs" parent="tabs"]
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_top = 25.0
+margin_left = 2.0
+margin_top = 22.0
+margin_right = -2.0
+margin_bottom = -2.0
 theme = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
@@ -68,6 +71,21 @@ focus_mode = 2
 size_flags_vertical = 3
 theme = ExtResource( 3 )
 bbcode_enabled = true
+text = "
+			  ░█████╗░██████╗░██╗░░░██╗██████╗░████████╗░█████╗░  ░░░░░░
+			  ██╔══██╗██╔══██╗╚██╗░██╔╝██╔══██╗╚══██╔══╝██╔══██╗  ░░░░░░
+			  ██║░░╚═╝██████╔╝░╚████╔╝░██████╔╝░░░██║░░░██║░░██║  █████╗
+			  ██║░░██╗██╔══██╗░░╚██╔╝░░██╔═══╝░░░░██║░░░██║░░██║  ╚════╝
+			  ╚█████╔╝██║░░██║░░░██║░░░██║░░░░░░░░██║░░░╚█████╔╝  ░░░░░░
+			  ░╚════╝░╚═╝░░╚═╝░░░╚═╝░░░╚═╝░░░░░░░░╚═╝░░░░╚════╝░  ░░░░░░
+
+				░██████╗░██████╗░░█████╗░██████╗░██╗░░██╗██╗░█████╗░
+				██╔════╝░██╔══██╗██╔══██╗██╔══██╗██║░░██║██║██╔══██╗
+				██║░░██╗░██████╔╝███████║██████╔╝███████║██║██║░░╚═╝
+				██║░░╚██╗██╔══██╗██╔══██║██╔═══╝░██╔══██║██║██║░░██╗
+				╚██████╔╝██║░░██║██║░░██║██║░░░░░██║░░██║██║╚█████╔╝
+				░╚═════╝░╚═╝░░╚═╝╚═╝░░╚═╝╚═╝░░░░░╚═╝░░╚═╝╚═╝░╚════╝░
+"
 scroll_following = true
 selection_enabled = true
 __meta__ = {
@@ -75,6 +93,7 @@ __meta__ = {
 }
 
 [node name="Console" type="Tabs" parent="tabs"]
+visible = false
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_top = 25.0
@@ -310,6 +329,8 @@ margin_top = 0.2
 margin_right = -0.175999
 margin_bottom = 0.199999
 theme = ExtResource( 3 )
+custom_colors/font_color_focus = Color( 1, 1, 1, 1 )
+custom_colors/font_color_hover = Color( 1, 1, 1, 1 )
 text = "File"
 __meta__ = {
 "_edit_use_anchors_": false
