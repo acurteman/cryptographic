@@ -1,6 +1,5 @@
-[gd_resource type="Theme" load_steps=32 format=2]
+[gd_resource type="Theme" load_steps=31 format=2]
 
-[ext_resource path="res://Fonts/Roboto-Regular.ttf" type="DynamicFontData" id=1]
 [ext_resource path="res://Theme/normalButton.tres" type="StyleBox" id=2]
 [ext_resource path="res://Theme/normalTextbox.tres" type="StyleBox" id=3]
 [ext_resource path="res://Theme/tab.tres" type="StyleBox" id=4]
@@ -225,7 +224,7 @@ font_data = ExtResource( 5 )
 [sub_resource type="DynamicFont" id=16]
 outline_size = 1
 outline_color = Color( 0, 0, 0, 1 )
-font_data = ExtResource( 1 )
+font_data = ExtResource( 5 )
 
 [sub_resource type="StyleBoxFlat" id=22]
 bg_color = Color( 0, 0, 0, 1 )

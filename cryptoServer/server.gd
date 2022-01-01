@@ -203,9 +203,7 @@ func add_user(ID, userName, alias):
 # Called when a user connects to the network. Adds their info to various lists,
 # and sends info to other connected users. If minimum players reached to start
 # game, the game is started.
-
-#	if dedicated:
-#		print(userName + " connected")
+	
 	connectedList[ID] = userName
 	connectedList2[userName] = ID
 	sharedNetworkInfo["connectedUsers"][alias] = ID
@@ -869,7 +867,7 @@ func manage_npcs():
 				numNew = rng.randi_range(1, maxNew)
 			
 			# For length of numNew, add new NPC
-			for i in range(0, numNew):
+			for _i in range(0, numNew):
 				add_npc()
 		
 		else:
@@ -1245,9 +1243,6 @@ func start_game(startMessage):
 	for user in userList:
 		userList[user]["cycleActions"].clear()
 	
-#	if dedicated:
-#		print("Game started")
-	
 	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", startMessage)
 
 func stop_game(stopMessage):
@@ -1342,9 +1337,6 @@ func user_left(ID):
 		else:
 			numNPCs -= 1
 		
-	#if dedicated:
-	#	print(connectedList[ID] + " disconnected")
-	
 		var discAlias = IDtoAlais[ID]
 		
 		# Notify users of disconnecttion
@@ -1365,8 +1357,14 @@ func user_left(ID):
 		rpc("refresh_statusBox")
 		
 		# Stop game if too few players
-		if len(connectedList) == networkInfo["minUsers"] - 1:
+		if numUsers < networkInfo["minUsers"]:
 			stop_game("Insufficient users, game stopped")
+			
+			#Remove any NPCs from game
+			if numNPCs > 0:
+				for npc in npcList:
+					npcList[npc].seppuku()
+					numNPCs -= 1
 
 remote func view_usernames():
 # Called by admins to get a list of currently connected users by username
