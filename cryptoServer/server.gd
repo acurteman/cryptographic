@@ -1347,13 +1347,14 @@ func user_left(ID):
 		
 		# Stop game if too few players
 		if numUsers < networkInfo["minUsers"]:
-			stop_game("Insufficient users, game stopped")
-			
-			#Remove any NPCs from game
-			if numNPCs > 0:
-				for npc in npcList:
-					npcList[npc].seppuku()
-					numNPCs -= 1
+			if gameRunning == true:
+				stop_game("Insufficient users, game stopped")
+				
+				#Remove any NPCs from game
+				if numNPCs > 0:
+					for npc in npcList:
+						npcList[npc].seppuku()
+						numNPCs -= 1
 
 remote func view_usernames():
 # Called by admins to get a list of currently connected users by username
