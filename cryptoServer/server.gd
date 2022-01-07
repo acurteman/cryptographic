@@ -851,7 +851,6 @@ func manage_npcs():
 	# Only add NPC's if the game is running
 	if gameRunning:
 		# Check if NPC gets added based on npcChange variable
-		print("NPC chance: " + str(npcChance))
 		if rng.randi_range(0, 100) < npcChance:
 			# NPC gets added, reset npcChance
 			npcChance = 0
@@ -1047,7 +1046,7 @@ remote func remote_stop():
 		stop_game("Game stopped by admin")
 
 remote func reset_game():
-# Resets all userInfo data back to default starting values
+# Resets all userInfo data back to default starting values and remove all NPC's
 	var senderID = get_tree().get_rpc_sender_id()
 	# Check for admin rights
 	if check_admin(senderID):
@@ -1058,6 +1057,10 @@ remote func reset_game():
 		for user in userList:
 			create_userInfo(user, true)
 			rpc_id(connectedList2[user], "update_userInfo", userList[user].duplicate())
+		
+		# Remove all NPC's
+		for npc in npcList:
+			npcList[npc].seppuku()
 		
 		# Update sharedNetworkInfo
 		for alias in sharedNetworkInfo["userMaxCreds"]:

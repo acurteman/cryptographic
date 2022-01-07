@@ -434,11 +434,15 @@ __meta__ = {
 }
 
 [node name="joinPopup" type="WindowDialog" parent="."]
+visible = true
 margin_left = 288.0
 margin_top = 128.0
 margin_right = 552.0
 margin_bottom = 296.0
 theme = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
 
 [node name="serverLabel" type="Label" parent="joinPopup"]
 margin_left = 16.0
@@ -447,7 +451,7 @@ margin_right = 88.0
 margin_bottom = 32.0
 rect_pivot_offset = Vector2( 1, 12.5 )
 theme = ExtResource( 3 )
-text = "Server: "
+text = "Server IP: "
 valign = 1
 __meta__ = {
 "_edit_use_anchors_": false
@@ -483,14 +487,12 @@ margin_bottom = 105.0
 theme = ExtResource( 3 )
 secret = true
 
-[node name="serverButton" type="OptionButton" parent="joinPopup"]
-margin_left = 126.0
-margin_top = 14.0
+[node name="serverInput" type="LineEdit" parent="joinPopup"]
+margin_left = 112.0
+margin_top = 16.0
 margin_right = 248.0
-margin_bottom = 37.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
+margin_bottom = 36.0
+theme = ExtResource( 3 )
 
 [node name="userSettingsPopup" type="WindowDialog" parent="."]
 anchor_left = 0.283

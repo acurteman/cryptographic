@@ -48,6 +48,7 @@ var localLog = []
 var outputTimer
 var PORT = 42420
 var prefs = {
+	"lastIP": "127.0.0.1",
 	"userName": "defaultUser",
 	"userAlias": "defaultAlias",
 	"userColor": "red",
@@ -117,8 +118,7 @@ func _ready():
 	helpPopup.add_item("About")
 	helpPopup.connect("id_pressed", self, "_on_help_item_pressed")
 	
-	$joinPopup/serverButton.add_item("Local")
-	$joinPopup/serverButton.add_item("Network")
+	$joinPopup/serverInput.text = prefs["lastIP"]
 	
 	$tabs/Script/loopBtn.add_item("None")
 	$tabs/Script/loopBtn.add_item("Every Cycle")
@@ -280,12 +280,8 @@ func _on_joinButton_pressed():
 	editPopup.set_item_disabled(0, true)
 	userPass = $joinPopup/passInput.text
 	
-	if $joinPopup/serverButton.get_selected_id() == 0:
-		print("Joining local server")
-		IP_ADDRESS = "127.0.0.1"
-	elif $joinPopup/serverButton.get_selected_id() == 1:
-		print("Joining network server")
-		IP_ADDRESS = "35.230.50.147"
+	IP_ADDRESS = $joinPopup/serverInput.text
+	prefs["lastIP"] = IP_ADDRESS
 	
 	#Create a  client that will connect to the server
 	var client : NetworkedMultiplayerENet = NetworkedMultiplayerENet.new()
