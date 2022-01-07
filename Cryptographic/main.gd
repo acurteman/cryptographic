@@ -16,10 +16,10 @@ var commandHistoryIndex = -1
 var commandList = {
 	"/bank": "<amount> <duration> Bank credits for a specified number of cycles, earning interest.",
 	"/buy": "<item name> <quanitity> Purchase an item",
-	"/changecolor": "<newcolor> Change your current color",
 	"/changepass": "<newpassword> Change your current password",
+	"/color": "<newcolor> Change your current color",
 	"/cycle": "<action> <target> Set your action for the current cycle, with optional target user",
-	"/cyclelist": "Show a list of available cycle actions",
+	# "/cyclelist": "Show a list of available cycle actions",
 	"/exec": "<item> <target> Execute a purchased item",
 	"/help": "Show list of commands",
 	"/inv": "Show current inventory",
@@ -128,10 +128,8 @@ func _ready():
 #	$userSettingsPopup/outputButton.add_item("Interval", 2)
 
 func _input(event):
-	# Checks if up or down has been pressed, changes the text in the inputText field
-	# to commands in the commandHistory array
-	
-	# first checks that commandHistory is not empty
+	# Checks if there is any command history, and if up or down has been pressed to
+	# cycle between previous commands
 	if len(commandHistory) > 0:
 		if event.is_action_pressed("command_prev"):
 			$inputText.text = commandHistory[commandHistoryIndex]
@@ -141,6 +139,10 @@ func _input(event):
 			if commandHistoryIndex < len(commandHistory) - 1:
 				commandHistoryIndex += 1
 				$inputText.text = commandHistory[commandHistoryIndex]
+	
+	# If tab was pressed, attempt to autocomplete what is written in the command line
+	if event.is_action_pressed("auto_complete"):
+		auto_complete()
 
 func _interval_execute():
 # Local function
@@ -395,12 +397,63 @@ func add_cycle_action(command):
 	# Send action to server
 	rpc_id(1, "add_cycle_action", get_tree().get_network_unique_id(), command)
 
+func auto_complete():
+# Called when a user presses tab, attempts to auto complete what
+# they have written in the command line
+	
+	# First check for blank input
+	if $inputText.text == "":
+		pass
+	else:
+		# Split up input and get the length of array
+		var inputArray = $inputText.text.split(" ")
+		var inputLength = inputArray.size()
+		
+		# If attempting to autocomplete first element of command
+		if inputLength == 1:
+			var commandArray = commandList.keys()
+			var matches = []
+			
+			# Loop through commands, checking if any element with what is in the inputArray[0]
+			for item in commandArray:
+				if item.begins_with(inputArray[0]):
+					matches.append(item)
+			
+			# If only a single command matches, autocomplete with that command
+			if matches.size() == 1:
+				$inputText.text = matches[0] + " "
+				$inputText.set_cursor_position($inputText.text.length())
+			
+		# If attempting to autocomplete second element of command
+		elif inputLength == 2:
+			# Check the first element and find matching command
+			if inputArray[0] == "/buy":
+				pass
+			
+			elif inputArray[0] == "/cycle":
+				pass
+			
+			elif inputArray[0] == "/exec":
+				pass
+			
+			elif inputArray[0] == "/help":
+				pass
+			
+			elif inputArray[0] == "/setmode":
+				pass
+			
+			elif inputArray[0] == "/transfer":
+				pass
+			
+			elif inputArray[0] == "/w":
+				pass
+
 func change_color(command):
 # Client function
 # Changes users bbcode color preference
 
 	if len(command) != 2:
-		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid syntax: /changecolor <newcolor>")
+		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "Invalid syntax: /color <newcolor>")
 	else:
 		prefs["userColor"] = command[1]
 		update_message("local", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], "User color changed to " + command[1])
@@ -718,7 +771,7 @@ func process_command(newCommand):
 		check_buy(command)
 	
 	# Change your user color
-	elif command[0] == "/changecolor":
+	elif command[0] == "/color":
 		change_color(command)
 	
 	# Change your password

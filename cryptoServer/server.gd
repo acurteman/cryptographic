@@ -72,7 +72,7 @@ var NPC = preload("res://npc.tscn")
 func _ready():
 	dedicated = true
 	
-#	print("Starting server...")
+	#print("Starting server...")
 	rng.randomize()
 	get_tree().connect("network_peer_disconnected",self,"user_left")
 	create_dedicated_network()
@@ -853,22 +853,11 @@ func manage_npcs():
 		# Check if NPC gets added based on npcChange variable
 		print("NPC chance: " + str(npcChance))
 		if rng.randi_range(0, 100) < npcChance:
-			# NPC's get added, reset npcChance
+			# NPC gets added, reset npcChance
 			npcChance = 0
 			
-			# Determine how many npcs can be added
-			# Number of NPCs should not exceed number of players
-			var maxNew = numUsers - numNPCs
-			var numNew = 1
-			
-			# If more than 1 NPC can be added, make the numNew random
-			# between 1 and maxNew
-			if maxNew > 1:
-				numNew = rng.randi_range(1, maxNew)
-			
-			# For length of numNew, add new NPC
-			for _i in range(0, numNew):
-				add_npc()
+			# Add a new npc 
+			add_npc()
 		
 		else:
 			# npc's not added this time, increase chance for next time
