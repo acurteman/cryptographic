@@ -404,11 +404,11 @@ func auto_complete():
 		# Split up input and get the length of array
 		var inputArray = $inputText.text.split(" ")
 		var inputLength = inputArray.size()
+		var matches = []
 		
 		# If attempting to autocomplete first element of command
 		if inputLength == 1:
 			var commandArray = commandList.keys()
-			var matches = []
 			
 			# Loop through commands, checking if any element with what is in the inputArray[0]
 			for item in commandArray:
@@ -424,25 +424,63 @@ func auto_complete():
 		elif inputLength == 2:
 			# Check the first element and find matching command
 			if inputArray[0] == "/buy":
-				pass
+				var shopArray = shopItems.keys()
+				for item in shopArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/cycle":
-				pass
+				var cycleArray = cycleActionList.keys()
+				for item in cycleArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/exec":
-				pass
+				var shopArray = shopItems.keys()
+				for item in shopArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/help":
-				pass
+				var commandArray = commandList.keys()
+				for item in commandArray:
+					if item.begins_with(inputArray[0]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/setmode":
-				pass
+				var modeArray = ["balanced", "attack", "defense", "creditMult"]
+				for item in modeArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/transfer":
-				pass
+				var aliasArray = sharedNetworkInfo["connectedUsers"].keys()
+				for item in aliasArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
 			
 			elif inputArray[0] == "/w":
-				pass
+				var aliasArray = sharedNetworkInfo["connectedUsers"].keys()
+				for item in aliasArray:
+					if item.begins_with(inputArray[1]):
+						matches.append(item)
+			
+			# If only a single command matches, autocomplete with that command
+			if matches.size() == 1:
+				$inputText.text = inputArray[0] + " " + matches[0] + " "
+				$inputText.set_cursor_position($inputText.text.length())
+		
+		# Attempt to autocomplete 3rd element of command. Should always be a user alias
+		elif inputLength == 2:
+			var aliasArray = sharedNetworkInfo["connectedUsers"].keys()
+			for item in aliasArray:
+				if item.begins_with(inputArray[1]):
+					matches.append(item)
+			
+			# If only a single command matches, autocomplete with that command
+			if matches.size() == 1:
+				$inputText.text = inputArray[0] + " " + inputArray[1] + " " + matches[0] + " "
+				$inputText.set_cursor_position($inputText.text.length())
 
 func change_color(command):
 # Client function
@@ -615,8 +653,7 @@ func load_ext_script():
 		return(false)
 
 func load_localLog():
-	var logPath = prefs["localLogLocation"] + sharedNetworkInfo["networkName"] + "Log.dat"
-	print("loading local log at: " + str(prefs["localLogLocation"]))
+	var logPath = "user://" + sharedNetworkInfo["networkName"] + "Log.dat"
 	var file = File.new()
 	if file.file_exists(logPath):
 		file.open(logPath, File.READ)
