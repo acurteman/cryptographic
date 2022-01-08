@@ -689,6 +689,9 @@ remote func new_cycle():
 	elif extCycleScript:
 		run_script()
 
+remote func play_errorTone():
+	$errorTone.play()
+
 func print_script():
 # Local function
 # Takes the contents of userScript, and loads them into the scriptText box
@@ -892,7 +895,7 @@ func run_script():
 		process_action_script(line, get_tree().get_network_unique_id())
 
 func save_localLog():
-	var logPath = prefs["localLogLocation"] + sharedNetworkInfo["networkName"] + "Log.dat"
+	var logPath = "user://" + sharedNetworkInfo["networkName"] + "Log.dat"
 	var file = File.new()
 	file.open(logPath, File.WRITE)
 	file.store_var(localLog)
@@ -1035,6 +1038,7 @@ remote func update_message(messageType, dateTime, color, name, newText):
 			$tabs/Messages/messageBox.append_bbcode(newMessage)
 		else:
 			$tabs/Messages/messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+		$beep.play()
 	
 	# Local messages are displayed in the message box, and saved to the local message log
 	elif messageType == "local":
@@ -1044,6 +1048,7 @@ remote func update_message(messageType, dateTime, color, name, newText):
 			$tabs/Messages/messageBox.append_bbcode(newMessage)
 		else:
 			$tabs/Messages/messageBox.append_bbcode(get_formatted_time(dateTime) + newMessage)
+		$beep.play()
 
 	# Notification messages are displayed in the message box and not saved
 	elif messageType == "notice":
