@@ -45,6 +45,7 @@ var numNPCs = 0 # Keeps track of how many npcs are currently initialized
 var numUsers = 0 # Keeps track of how many players are connected to the server
 var npcChance = 0
 var npcList = {} # List of all current NPC's, keys are NPC id's, values are intitialized npc nodes
+var playersReady = false
 var rng = RandomNumberGenerator.new()
 var saveTimer
 var sharedNetworkInfo = {
@@ -226,9 +227,6 @@ func add_user(ID, userName, alias):
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	rpc("refresh_connectedList")
 	rpc("receive_message", "notice", OS.get_datetime(), "silver", "SERVER", alias + " connected")
-	if not gameRunning:
-		if len(connectedList) >= networkInfo["minUsers"]:
-			start_game("Sufficient users connected, beginning game")
 
 remote func announce(command):
 # Called by admins to make an announcement message to connected users 
@@ -688,6 +686,7 @@ func create_userInfo(userName, reset):
 	userList[userName]["logoutTime"] = 0
 	userList[userName]["maxCredits"] = 100
 	userList[userName]["processMode"] = "balanced"
+	userList[userName]["ready"] = false
 	userList[userName]["traceRoute"] = 0
 	userList[userName]["userName"] = userName
 
@@ -935,6 +934,33 @@ func npc_killed(killerID, reward):
 	server_message(killerID, "sys", "You eliminated a bot! Reward: " + str(reward))
 	userList[connectedList[killerID]]["currentCredits"] += reward
 	check_maxCredits(connectedList[killerID])
+
+remote func player_ready():
+# Called when a player uses the /ready command, indicating they are ready to start
+# When all players are ready, the game will start
+	var senderID = get_tree().get_rpc_sender_id()
+	var senderUname = connectedList[senderID]
+	
+	# Change players ready status to true
+	userList[senderUname]["ready"] = true
+	server_message(senderID, "notice", "Ready up successful")
+	
+	# If minimum number of players have connected, check their ready status
+	if connectedList.size() >= networkInfo["minUsers"]:
+		var allReady = true
+		
+		# Loop trough all connected players, checking ready status
+		for userName in connectedList2:
+			if userList[userName]["ready"] == false:
+				allReady = false
+		
+		if allReady:
+			# Start the game
+			start_game("All connected players ready, game is now starting.")
+			
+			# Reset players ready status to false
+			for userName in connectedList2:
+				userList[userName]["ready"] = false
 
 func process_action_server(action, userID):
 # Handles actions queued in clients cycle action array, called during the _process_cycle function

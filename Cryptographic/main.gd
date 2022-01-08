@@ -24,6 +24,7 @@ var commandList = {
 	"/help": "Show list of commands",
 	"/inv": "Show current inventory",
 	"/listmodes": "Show a list of process modes",
+	"/ready": "Let the server know you are ready to start",
 	"/resetpass": "Reset your password to the default network password",
 	"/rtd": "<amount> Roll the dice and gamble your credits",
 	"/setmode": "<mode> Set your current process mode",
@@ -851,6 +852,10 @@ func process_command(newCommand):
 		for mode in processModes:
 			$tabs/Messages/messageBox.append_bbcode(mode + ": " + processModes[mode])
 			$tabs/Messages/messageBox.newline()
+	
+	# Ready up to start the game
+	elif command[0] == "/ready":
+		rpc_id(1, "player_ready")
 	
 	# Change your password back to the default network password
 	elif command[0] == "/resetpass":
