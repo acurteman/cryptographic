@@ -511,7 +511,7 @@ func check_buy(command):
 	# Check for quantity
 	if len(command) > 2:
 			quantity = int(command[2])
-			if typeof(quantity) != TYPE_INT:
+			if typeof(command[2]) != TYPE_INT:
 				update_message("sys", OS.get_datetime(), prefs["sysColor"], prefs["sysName"], 'Invalid item quantity')
 				return
 				
@@ -755,6 +755,8 @@ func process_action_script(action, userID):
 
 func process_command(newCommand):
 # Main function for processing commands entered by users using the / format
+	# Strip any trailing spaces
+	newCommand = newCommand.rstrip(" ")
 	var command = newCommand.split(" ")
 	
 	# Check if entered command was an admin command
