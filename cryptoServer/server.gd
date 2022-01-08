@@ -483,23 +483,21 @@ remote func broadcast_message(messageType, curTime, color, name, newText):
 remote func buy_item(item, quantity, userID):
 # Checks if user has enough credits to make purchase, then
 # adds items to users inventory
-
-	# Only run on server
-	if get_tree().is_network_server():
-		var userName = connectedList[userID]
-		var userTax = int(userList[userName]["maxCredits"] * (float(networkInfo["shopTax"]) / 100))
-		var total = (shopItems[item] + userTax) * quantity
-		
-		# Check if user has enough for purchase
-		if userList[userName]["currentCredits"] < total:
-			server_message(userID, "sys", "Insufficient credits for purchase")
-		
-		# Make purchase
-		else:
-			userList[userName]["currentCredits"] -= total
-			userList[userName]["inventory"][item] += quantity
-			server_message(userID, "sys", "Purchase successful")
-			rpc_id(userID, "update_userInfo", userList[userName].duplicate())
+	
+	var userName = connectedList[userID]
+	var userTax = int(userList[userName]["maxCredits"] * (float(networkInfo["shopTax"]) / 100))
+	var total = (shopItems[item] + userTax) * quantity
+	
+	# Check if user has enough for purchase
+	if userList[userName]["currentCredits"] < total:
+		server_message(userID, "sys", "Insufficient credits for purchase")
+	
+	# Make purchase
+	else:
+		userList[userName]["currentCredits"] -= total
+		userList[userName]["inventory"][item] += quantity
+		server_message(userID, "sys", "Purchase successful")
+		rpc_id(userID, "update_userInfo", userList[userName].duplicate())
 
 func change_alias(newAlias, userID):
 # Called when user executes a changeAlias item
@@ -860,7 +858,7 @@ func manage_npcs():
 		
 		else:
 			# npc's not added this time, increase chance for next time
-			npcChance += 5
+			npcChance += 3
 
 remote func net_login(userName, password, alias, clientVersion):
 # Called when user connected to server. Checks login credentials and handles success

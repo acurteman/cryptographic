@@ -18,8 +18,8 @@ var npcID
 var lives = 0
 var main
 var maxCredits = 100
-var maxWait = 20
-var minWait = 2
+var maxWait = 30
+var minWait = 15
 var username
 var usernames = [
 	"Kasey","Hardy","Mariah","Bingo","Prancer","Wiggles","Paddy","Duffy",
@@ -54,16 +54,21 @@ func action():
 	# Selecting a target user
 	var targetID = 0
 	var targetList = main.connectedList.keys()
+	var actionRoll 
 	
 	# Shuffle the target list, then pick the first element until target is not an NPC
 	while targetID <= 0:
 		targetList.shuffle()
 		targetID = targetList[0]
 	
-	#print("Bot target: " + main.connectedList[targetID])
+	# Randomly select which action to perform
+	actionRoll = main.rng.randi_range(0, 100)
 	
-	# Perform action on target user
-	hackWallet(targetID)
+	# Select which action to make based on actionRoll
+	if actionRoll < 95:
+		hackWallet(targetID)
+	else:
+		stealID(targetID)
 
 func gen_alias():
 # Called when the NPC is initialized, generates an alias
@@ -95,10 +100,16 @@ func gen_stats():
 	
 	# Calculating average stats for all connected users, and setting
 	# NPC's starting stats to the average, or close enough...
-	for user in main.userList:
-		avgAtt += main.userList[user]["attack"]
-		avgCM += main.userList[user]["creditMult"]
-		avgCredits += main.userList[user]["currentCredits"]
+	for userAlias in main.sharedNetworkInfo["connectedUsers"]:
+		var userID = main.aliasToID[userAlias]
+		var userName = main.connectedList[userID]
+		
+		# Exclude bots from average stats
+		if userID > 0:
+			avgAtt += main.userList[userName]["attack"]
+			avgCM += main.userList[userName]["creditMult"]
+			avgCredits += main.sharedNetworkInfo["userMaxCreds"][userAlias]
+	
 	attack = avgAtt / main.numUsers
 	creditMult = avgCM / main.numUsers
 	avgCredits = avgCredits / main.numUsers
@@ -110,8 +121,8 @@ func gen_stats():
 	lives = main.rng.randi_range(1, 3)
 	
 	# Setting random values for min and max wait time for action timer
-	minWait = main.rng.randi_range(2, 10)
-	maxWait = main.rng.randi_range(11, 20)
+	minWait = main.rng.randi_range(10, 20)
+	maxWait = main.rng.randi_range(21, 40)
 
 func gen_username():
 # Called when the NPC is initialized, generates a username
@@ -133,6 +144,8 @@ func gen_username():
 func hackWallet(targetID):
 # NPC version of hackWallet, functions same as player action. Attempts to steal
 # credits from target user
+	
+	print("NPC hacking wallet")
 	
 	# Check if attack is successful
 	if npc_attack_outcome(targetID):
@@ -197,6 +210,22 @@ func npc_attack_outcome(targetID):
 	
 	#print("NPC attack: " + str(outcome))
 	return outcome
+
+func stealID(targetID):
+# Called when an NPC attempts to swap aliases with a player
+	print("NPC stealing ID")
+	
+	if npc_attack_outcome(targetID):
+		var targetAlias = main.IDtoAlais[targetID]
+		var oldAlias = alias
+		
+		# Briefly changing the defenders alias to ERROR, 
+		# to avoid having two users with the same name momentarily
+		main.change_alias("ERROR", targetID)
+		
+		# Swapping user aliases
+		main.change_alias(targetAlias, npcID)
+		main.change_alias(oldAlias, targetID)
 
 func start_action_timer():
 # Starts a new action timer, which will be set for a random time and trigger
