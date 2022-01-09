@@ -12,6 +12,7 @@ var arguments = {
 	"traceRoute": 0} # List of all actions and the number of required arguments, keys are command names, values are number of arguments
 var connectedList = {} # List of connected users, keys are ID's, values are usernames
 var connectedList2 = {} # Reverse of connected list, keys are usernames, values are ID's
+var cyclesRemaining
 var cycleTimer
 var depositList = []
 var ddosTimer
@@ -35,6 +36,7 @@ var networkInfo = {
 	"baseCredits": 10,
 	"cycleDuration": 10,
 	"ddosThreshold": 5,
+	"gameLength": 120,
 	"maxFirewallLevel": 1,
 	"minUsers": 2,
 	"netPass": "password",
@@ -151,9 +153,16 @@ func _process_cycle():
 	sharedNetworkInfo["processOrder"].append(topUser)
 	rpc("update_sharedNetworkInfo", sharedNetworkInfo.duplicate())
 	
-	# Let users know a new cycle has started
-	rpc("new_cycle")
-	server_new_cycle()
+	# Reduce remaining cycles
+	cyclesRemaining -= 1
+	
+	# Check if end of game
+	if cyclesRemaining > 0:
+		# Let users know a new cycle has started
+		rpc("new_cycle")
+		server_new_cycle()
+	else:
+		stop_game("Last cycle finished, game over")
 
 func activate_traceRoute(userID, tracedID):
 # Alerts user if their traceRoute is activated, then gives them an attack bonus vs traced user
@@ -560,12 +569,17 @@ remote func change_password(command):
 
 func check_admin(userID):
 # Simple function to check if a user has admin access
-	var adminArray = Array(networkInfo["adminList"].split(","))
-	if adminArray.has(connectedList[userID]):
-		return(true)
+	
+	# If not server
+	if userID != 0:
+		var adminArray = Array(networkInfo["adminList"].split(","))
+		if adminArray.has(connectedList[userID]):
+			return(true)
+		else:
+			server_message(userID, "notice", "No admin rights")
+			return(false)
 	else:
-		server_message(userID, "notice", "No admin rights")
-		return(false)
+		return(true)
 
 func check_alias(alias, senderID):
 # Checks if an alias is already in use. Returns original alias if not,
@@ -995,6 +1009,26 @@ func process_action_server(action, userID):
 	elif action[0] == "traceRoute":
 		init_traceRoute(userID)
 
+func process_high_scores():
+# Called at the end of a game, checks who had the highest score and notifies players
+# Then resets the game
+	var winner
+	var highScore = 0
+	
+	# Check max credits of all users
+	for user in userList:
+		if userList[user]["maxCredits"] > highScore:
+			winner = user
+			highScore = userList[user]["maxCredits"]
+	
+	# Notify users of winner
+	var winnerAlias = IDtoAlais[connectedList2[winner]]
+	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Congrats to " + winner + ". A.K.A " + winnerAlias)
+	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Who had the highest credit amount of " + str(highScore))
+	
+	# Reset game
+	reset_game()
+
 func process_deposits():
 # Called at the start of a cycle if there are deposits in the depositList
 # Adds interest to deposits, and returns to user if duration is complete
@@ -1074,13 +1108,17 @@ remote func reset_game():
 	var senderID = get_tree().get_rpc_sender_id()
 	# Check for admin rights
 	if check_admin(senderID):
-		# Notify users game is reseting
-		rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Game being reset by admin")
+		# Notify users game is reset by admin
+		if senderID != 0:
+			rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Game being reset by admin")
 		
 		# Reset userInfo and update users
 		for user in userList:
 			create_userInfo(user, true)
-			rpc_id(connectedList2[user], "update_userInfo", userList[user].duplicate())
+			
+			# If player currently connected, update them
+			if connectedList2.has(user):
+				rpc_id(connectedList2[user], "update_userInfo", userList[user].duplicate())
 		
 		# Remove all NPC's
 		for npc in npcList:
@@ -1203,6 +1241,17 @@ func server_new_cycle():
 	# Check how many NPC's are connected, add new NPC 
 	if numNPCs < numUsers:
 		manage_npcs()
+	
+	# Let players know how many cycles are left every 10 cycles
+	if (cyclesRemaining % 10) == 0:
+		rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", "Cycles remaining: " + str(cyclesRemaining))
+
+remote func set_game_length(length):
+# Called by admins to change the game legnth
+	var senderID = get_tree().get_rpc_sender_id()
+	
+	if check_admin(senderID):
+		networkInfo["gameLength"] = length
 
 remote func set_server_pass(command):
 # Called by server admins to change the server password
@@ -1239,7 +1288,10 @@ func start_game(startMessage):
 
 	# Set game to on
 	gameRunning = true
-
+	
+	# Set number of game cycles
+	cyclesRemaining = networkInfo["gameLength"]
+	
 	# Start up game timers
 	cycleTimer.start()
 	ddosTimer = Timer.new()
@@ -1273,6 +1325,10 @@ func stop_game(stopMessage):
 	
 	# Notify users
 	rpc("receive_message", "sys", OS.get_datetime(), "silver", "SERVER", stopMessage)
+	
+	# If remaining cycles was 0, check high scores
+	if cyclesRemaining == 0:
+		process_high_scores()
 
 remote func transfer_credits(command):
 # Called by users to transfer credits from themselves to another user
