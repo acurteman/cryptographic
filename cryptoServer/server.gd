@@ -715,6 +715,34 @@ func create_userInfo(userName, reset):
 	userList[userName]["traceRoute"] = 0
 	userList[userName]["userName"] = userName
 
+remote func cycle_queue():
+# Called by clients, returns a list of their currently queued cycle actions
+	var senderID = get_tree().get_rpc_sender_id()
+	var senderUname = connectedList[senderID]
+	
+	# Check if cycle action queue is empty
+	if userList[senderUname]["cycleActions"].empty():
+		server_message(senderID, "sys", "No actions in cycle queue")
+	
+	else:
+		var cycleAction = ""
+		var cycleQueue = ""
+		
+		server_message(senderID, "sys", "Current cycle actions queue: ")
+		
+		# Loop through the clients cycleAction list, appending each action the the cycleQueue
+		for item in userList[senderUname]["cycleActions"]:
+			# Actions are themselves arrays, so loop through appending each part to message
+			for subItem in item:
+				cycleAction += subItem + " "
+			
+			# Append action to queue message with a newline, reset for next iteration
+			cycleQueue += cycleAction + "\n"
+			cycleAction = ""
+		
+		# Send it on back
+		server_message(senderID, "sys", cycleQueue)
+
 remote func execute_item(item, userID):
 # Called by client wanting to execute an item.
 # Checks if user has item in their inventory, then executes the item

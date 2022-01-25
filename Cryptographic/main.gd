@@ -26,6 +26,7 @@ var commandList = {
 	"/help": "Show list of commands",
 	"/inv": "Show current inventory",
 	"/listmodes": "Show a list of process modes",
+	"/queue": "Show your current cycle action queue",
 	"/ready": "Let the server know you are ready to start",
 	"/resetpass": "Reset your password to the default network password",
 	"/rtd": "<amount> Roll the dice and gamble your credits",
@@ -776,6 +777,7 @@ func process_command(newCommand):
 		elif command[0] == "/kick":
 			rpc_id(1, "kick_user", command[1])
 		
+		
 		elif command[0] == "/resetgame":
 			rpc_id(1, "reset_game")
 		
@@ -862,6 +864,10 @@ func process_command(newCommand):
 		for mode in processModes:
 			$tabs/Messages/messageBox.append_bbcode(mode + ": " + processModes[mode])
 			$tabs/Messages/messageBox.newline()
+	
+	# Show your current cycle action list
+	elif command[0] == "/queue":
+		rpc_id(1, "cycle_queue")
 	
 	# Ready up to start the game
 	elif command[0] == "/ready":
