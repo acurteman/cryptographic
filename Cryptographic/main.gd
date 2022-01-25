@@ -18,9 +18,10 @@ var commandList = {
 	"/bank": "<amount> <duration> Bank credits for a specified number of cycles, earning interest.",
 	"/buy": "<item name> <quanitity> Purchase an item",
 	"/changepass": "<newpassword> Change your current password",
+	"/clearcycle": "Clears all actions you have queued up in your cycle action list",
 	"/color": "<newcolor> Change your current color",
 	"/cycle": "<action> <target> Set your action for the current cycle, with optional target user",
-	# "/cyclelist": "Show a list of available cycle actions",
+	"/cyclelist": "Show a list of available cycle actions",
 	"/exec": "<item> <target> Execute a purchased item",
 	"/help": "Show list of commands",
 	"/inv": "Show current inventory",
@@ -89,7 +90,7 @@ var shopItems = {
 var userInfo = {}
 var userPass = ""
 var userScript = []
-var version = "0.0.2"
+var version = "0.0.3"
 
 func _ready():
 	#$helpBox.popup()
@@ -813,6 +814,10 @@ func process_command(newCommand):
 	# Buy an item
 	elif command[0] == "/buy":
 		check_buy(command)
+	
+	# Clear you cycle action list
+	elif command[0] == "/clearcycle":
+		rpc_id(1, "clear_cycle_actions")
 	
 	# Change your user color
 	elif command[0] == "/color":

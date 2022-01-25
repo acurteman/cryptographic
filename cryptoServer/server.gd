@@ -68,7 +68,7 @@ var shopItems = {
 	"traceRoute": 25}
 var skipList = []
 var userList = {} # Saves user data on the network, keys are user names
-var version = "0.0.2"
+var version = "0.0.3"
 
 var NPC = preload("res://npc.tscn")
 
@@ -652,6 +652,17 @@ func check_target(action, targetAlias, userID):
 		return(false)
 	else:
 		return(true)
+
+remote func clear_cycle_actions():
+# Called by users to clear actions that they have queued up in the cycle action list
+	var senderID = get_tree().get_rpc_sender_id()
+	var senderUname = connectedList[senderID]
+	
+	# Clear the users cycle action list
+	userList[senderUname]["cycleActions"].clear()
+	
+	# Notify user
+	server_message(senderID, "sys", "Cycle action queue cleared.")
 
 func create_dedicated_network():
 # Creates a dedicated server with no starting host
